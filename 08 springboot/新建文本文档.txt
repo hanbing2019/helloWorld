@@ -1,0 +1,6 @@
+@EnableAutoConfigurationtion:用于激活springboot自动装配的特性
+熟悉多线程与并发编程，拥有
+
+
+springboot内置的tomcat其实就是它一个组件，修改它内存空间实质上就是修改springboot运行内存，即java运行内存
+nohup java -Xmx128m -Xms64m -Xmn32m -Xss16m Test.jar --server.port=8080 >test.log 2>&1 &
