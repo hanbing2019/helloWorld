@@ -1,0 +1,37 @@
+ArrayList
+
+底层数据结构是数组，查询快，增删慢。
+                线程不安全，效率高。
+
+ARRAYLIST如何保证线程安全
+ArrayList是线程不安全的，轻量级的。如何使ArrayList线程安全？
+
+1、继承Arraylist，然后重写或按需求编写自己的方法，这些方法要写成synchronized，在这些synchronized的方法中调用ArrayList的方法。
+2、List list = Collections.synchronizedList(new ArrayList());
+
+				
+循环遍历ArrayList集合时，for和foreach的耗时时间差不多，多次测试可以发现，for循环效率比foreach的效率还要高一些；
+循环遍历LinkedList集合时，for循环的耗时明显高于foreach循环的耗时。
+在不确定长度或者计算长度有损性能的时候用foreach比较方便；当遍历链表结构的集合时一定不要用for循环。
+
+LinkedList
+使用链表结构存储数据，适合数据的动态添加或者删除，随机访问或者变量的效率比较低
+
+
+LinkedList for循环遍历比较慢的原因是
+for循环遍历通过循环get方法来获取的，get内部又是循环遍历链表的，虽然通过二分查找做了优化，
+但是LinkedList在get任何一个位置的数据的时候，都会把前面的数据走一遍，越往后效率就会越低，数据量越大效率会越来越低，
+所以最好不要使用for循环遍历
+遍历LinkedList使用foreach循环或者迭代器最好，这种方式是通过内存地址去找数据，能大大提升访问效率
+LinkedList:添加删除的效率比ArrayList高，它不需要位移节点；
+
+Vecoter
+Vector是java中可以实现自动增长的对象数组，实现了动态数据的功能，他的继承和实现结果和ArrayList是相同的，
+ArrayList中的功能的实现方式基本相同，不过在涉及到线程安全的方法中使用了关键字synchronized来保证数据的安全
+
+
+单例集合体现
+多例集合体现
+
+
+
