@@ -35,7 +35,7 @@ for update
 
 
 
-
+select * from information_schema.INNODB_TRX
 
 
 
