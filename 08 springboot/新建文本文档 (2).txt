@@ -1,0 +1,669 @@
+访问静态资源
+默认配置
+Spring Boot默认提供静态资源目录位置需置于classpath下，目录名需符合如下规则：
+/static
+/public
+/resources	
+/META-INF/resources
+举例：我们可以在src/main/resources/目录下创建static，在该位置放置一个图片文件。启动程序后，尝试访问http://localhost:8080/D.jpg。如能显示图片，配置成功。
+
+
+
+
+springboot整合jdbcTemplate
+引入jdbc的starter包和jdbc的驱动包
+<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+<dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.13</version>
+        </dependency>
+配置文件中配置数据源
+spring.datasource.url=jdbc:mysql://localhost:3306/test?serverTimezone=GMT%2B8&characterEncoding=utf-8
+spring.datasource.username=root
+spring.datasource.password=123456
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+
+注入
+@Autowired
+private JdbcTemplate jdbcTemplate;
+这样就可以使用了
+
+
+整合mybatis
+引入starter
+<!--引入mybatis的依赖starter -->
+<dependency>
+    <groupId>org.mybatis.spring.boot</groupId>
+    <artifactId>mybatis-spring-boot-starter</artifactId>
+    <version>1.3.2</version>
+</dependency>
+<!--mysql依赖jar -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.16</version>
+</dependency>
+如果使用连接池，比如druid，
+<!--druid连接池 -->
+<dependency>
+    <groupId>com.alibaba</groupId>
+    <artifactId>druid</artifactId>
+    <version>1.1.19</version>
+</dependency>
+
+配置数据源
+spring.datasource.url=jdbc:mysql://localhost:3306/test?serverTimezone=GMT%2B8&characterEncoding=utf-8
+spring.datasource.username=root
+spring.datasource.password=123456
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource  ##指定连接池
+
+##配置mybatis映射文件路径
+mybatis.mapperLocations=classpath\:mapper/*.xml 
+
+在启动类上使用@MapperScan注解指定映射接口所在的路径
+@MapperScan("com.tom.dao")
+
+
+配置多数据源
+使用Atomikos来解决分布式事务
+引入Atomikos的starter包
+
+<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jta-atomikos</artifactId>
+        </dependency>
+
+
+1自定义事务源
+mysql.datasource.test1.url = jdbc:mysql://localhost:3306/test?serverTimezone=GMT%2B8&characterEncoding=utf-8
+mysql.datasource.test1.username = root
+mysql.datasource.test1.password = 123456
+
+mysql.datasource.test1.minPoolSize = 0
+mysql.datasource.test1.maxPoolSize = 25
+mysql.datasource.test1.maxLifetime = 20000
+mysql.datasource.test1.borrowConnectionTimeout = 30
+mysql.datasource.test1.loginTimeout = 30
+mysql.datasource.test1.maintenanceInterval = 60
+mysql.datasource.test1.maxIdleTime = 60
+mysql.datasource.test1.testQuery = select 1
+
+mysql.datasource.test1：自定义前缀
+
+2定义一个封装事务属性的类DBConfig1
+在类上使用注解@ConfigurationProperties(prefix = "mysql.datasource.test1")，注解的属性prefix的
+值就是自定义前缀，这样就实现bean属性的指定配置
+@ConfigurationProperties可以放在类上，也可以放在方法上
+
+
+3，定义Configuration配置类
+将通过存放属性的bean获取配置的属性，然后创建数据源
+
+4定义mybatis的配置类MybatisConfig1，在类上使用注解@Configuration表名当前类就是spring的一个java配置类
+在类上使用@MapperScan(basePackages = "com.tom.dao.source1", sqlSessionTemplateRef = "sqlSessionTemplate1")
+basePackages：指定定扫描的mapper接口所在的包
+sqlSessionTemplateRef：指定使用的SqlSessionTemplate的bean name
+
+5,创建数据源AtomikosDataSourceBean
+创建过程
+ @Bean(name = "dataSource1")
+    public DataSource dataSource1(DBConfig1 testConfig) throws SQLException {DBConfig1定义的配置类
+        MysqlXADataSource mysqlXaDataSource = new MysqlXADataSource();
+        mysqlXaDataSource.setUrl(testConfig.getUrl());
+        mysqlXaDataSource.setPinGlobalTxToPhysicalConnection(true);
+        mysqlXaDataSource.setPassword(testConfig.getPassword());
+        mysqlXaDataSource.setUser(testConfig.getUsername());
+        mysqlXaDataSource.setPinGlobalTxToPhysicalConnection(true);
+
+        AtomikosDataSourceBean xaDataSource = new AtomikosDataSourceBean();
+        xaDataSource.setXaDataSource(mysqlXaDataSource);
+        xaDataSource.setUniqueResourceName("dataSource1");
+
+        xaDataSource.setMaxPoolSize(testConfig.getMaxPoolSize());
+        xaDataSource.setMinPoolSize(testConfig.getMinPoolSize());
+        xaDataSource.setMaxLifetime(testConfig.getMaxLifetime());
+        xaDataSource.setBorrowConnectionTimeout(testConfig.getBorrowConnectionTimeout());
+        xaDataSource.setLoginTimeout(testConfig.getLoginTimeout());
+        xaDataSource.setMaintenanceInterval(testConfig.getMaintenanceInterval());
+        xaDataSource.setMaxIdleTime(testConfig.getMaxIdleTime());
+        xaDataSource.setTestQuery(testConfig.getTestQuery());
+        return xaDataSource;
+    }
+	
+
+	
+6创建SqlSessionFactory bean
+
+@Primary
+@Bean(name = "sqlSessionFactory1")
+public SqlSessionFactory sqlSessionFactory1(@Qualifier("dataSource1") DataSource dataSource)
+        throws Exception {
+    SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
+    bean.setDataSource(dataSource);
+    PathMatchingResourcePatternResolver patternResolver=new PathMatchingResourcePatternResolver();
+
+    bean.setConfigLocation(new DefaultResourceLoader().getResource("classpath:mybatis-config1.xml"));
+    bean.setMapperLocations( patternResolver.getResources("classpath*:/mapper/source1/*.xml"));
+    return bean.getObject();
+}
+
+7创建SqlSessionTemplate
+@Bean(name = "sqlSessionTemplate1")
+public SqlSessionTemplate sqlSessionTemplate1(
+        @Qualifier("sqlSessionFactory1") SqlSessionFactory sqlSessionFactory) throws Exception {
+    return new SqlSessionTemplate(sqlSessionFactory);
+}
+
+注入mapper后就可以使用，@Transaction注解来控制事务
+
+
+全局捕获异常
+
+创建异常类GlobalException，在类上使用@ControllerAdvice
+订阅一个处理异常的方法，方法参数为HttpServletRequest req, Exception e
+方法返回异常信息
+@ControllerAdvice
+//@RestControllerAdvice
+public class GlobalException {
+
+    //定义异常返回的结果
+    @ExceptionHandler(value=RuntimeException.class)
+    @ResponseBody
+    public Object defaultException(HttpServletRequest req, Exception e){
+        e.printStackTrace();
+        System.out.println("---defaultException---");
+        return "请求异常";
+    }
+}
+@ControllerAdvice
+@ExceptionHandler：指定异常类型
+
+404跳转
+也是在GlobalException中定义一个处理方法，方法返回WebServerFactoryCustomizer，在方法中实现404的跳转
+
+//自定义跳转的请求
+@Bean
+public WebServerFactoryCustomizer<ConfigurableWebServerFactory> webServerFactoryCustomizer(){
+    System.out.println("---web---");
+    return (factory -> {
+        ErrorPage errorPage=new ErrorPage(HttpStatus.NOT_FOUND,"/404");
+        factory.addErrorPages(errorPage);
+    });
+}
+
+
+
+整合jsp(maven项目的包选war)
+1.
+在pom文件里面新增
+<!--JavaServer Pages Standard Tag Library，JSP标准标签库-->
+<dependency>
+	<groupId>javax.servlet</groupId>
+	<artifactId>jstl</artifactId>
+</dependency>
+
+<!--内置tocat对Jsp支持的依赖，用于编译Jsp-->
+<dependency>
+	<groupId>org.apache.tomcat.embed</groupId>
+	<artifactId>tomcat-embed-jasper</artifactId>
+</dependency>
+2.
+由于要springmvc解析jsp,要配置试图解析器，在applicaiton.properties 里面新增
+spring.mvc.view.prefix=/WEB-INF/jsp/
+spring.mvc.view.suffix=.jsp
+
+3.在resources里面新建WEB-INF文件夹，在里面放一个index.jsp页面
+
+4.最后新建一个controller，注意这里的注解是@Controller,千万不能用@RestController
+package cn.enjoy.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+@Controller
+@RequestMapping("/jsp")
+public class JspController {
+    @RequestMapping("/hi")
+    public String sayHello() {
+        return "index";
+    }
+}
+模板引擎
+jar
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+
+
+集成Swagger2构建API文档
+
+添加jar
+
+<dependency>
+	<groupId>io.springfox</groupId>
+	<artifactId>springfox-swagger2</artifactId>
+<version>2.7.0</version>
+</dependency>
+<dependency>
+	<groupId>io.springfox</groupId>
+	<artifactId>springfox-swagger-ui</artifactId>
+<version>2.7.0</version>
+</dependency>
+
+
+定义SwaggerConfig配置类
+使用@Configuration和@EnableSwagger2这2个注解
+
+
+
+首先通过 @EnableSwagger2 注解开启了 Swagger 2，然后最主要的是配置一个 Docket。
+通过 apis 方法配置要扫描的 controller 位置，通过 paths 方法配置路径。
+在 apiInfo 中构建文档的基本信息，例如描述、联系人信息、版本、标题等。
+
+
+Controller 上添加相关的 @Api 注解：
+（1）@Api 注解标注在类上用来描述整个 Controller 信息。
+		
+（2）@ApiOperation 注解标注在方法上，用来描述一个方法的基本信息。
+		value api名称
+		notes 备注说明
+（3）@ApiImplicitParam 注解标注在方法上，用来描述方法的参数。其中 paramType 是指方法参数的类型，有如下可选值：
+		path：参数获取方式为 @PathVariable
+		query：参数获取方式为 @RequestParam
+		header：参数获取方式为 @RequestHeader
+		body
+		form
+		
+		name 对应方法中接收参数名称
+		value 备注说明
+		required 是否必须 boolean
+		paramType 参数类型 body、path、query、header、form中的一种
+		body 使用@RequestBody接收数据 POST有效
+		path 在url中配置{}的参数
+		query 普通查询参数 例如 ?query=q ,jquery ajax中data设置的值也可以，例如 {query:”q”},springMVC中不需要添加注解接收
+		header 使用@RequestHeader接收数据
+		form 笔者未使用，请查看官方API文档
+		dataType 数据类型，如果类型名称相同，请指定全路径，例如 dataType = “java.util.Date”，springfox会自动根据类型生成模型
+
+
+（4）如果有多个参数，可以将多个参数的 @ApiImplicitParam 注解放到 @ApiImplicitParams 中。
+		@ApiImplicitParams 包含多个@ApiImplicitParam
+		
+	@ApiOperation(value = "用户登录接口", notes = "描述")
+    @ApiImplicitParams(value = { @ApiImplicitParam(name = "name", value = "用户名", required = true),
+            @ApiImplicitParam(name = "pwd", value = "密码", required = true),
+            @ApiImplicitParam(name = "rememberMe", value = "勾选时传递true", required = false) })
+		
+（5）@ApiResponse 是对响应结果的描述。code 表示响应码，message 为相应的描述信息。如果有多个 @ApiResponse，则放在一个 @ApiResponses 中。
+
+（6）@ApiIgnore 注解表示不对某个接口生成文档。
+
+
+
+对模型对象也添加相关的注解：
+  由于在上面 Controller 里的 updateUser 方法中，
+  使用 @RequestBody 注解来接收数据，此时可以通过 @ApiModel 注解和 @ApiModelProperty 注解配置 User 对象的描述信息。
+
+		@ApiModel
+		@ApiModel 用于实体类上，标注为需要生成文档的实体
+		
+
+		@ApiModelProperty 
+		value 参数名称
+		required 是否必须 boolean
+		hidden 是否隐藏 boolean
+		其他信息和上面同名属性作用相同，hidden属性对于集合不能隐藏，目前不知道原因
+		@ApiModelProperty(value = "url菜单",required = true) 用于实体属性，标注该属性的说明，require 为false时不会在页面上进行展示该属性
+
+
+
+启动 Spring Boot 项目，在浏览器中输入 http://localhost:8080/swagger-ui.html 即可看到接口文档。
+
+
+
+
+
+
+集成日志
+
+引入starter-web包，包中集成了日志slf4j,所以可以不同在引入其他的日志jar
+spring-boot-starter-web--》spring-boot-starter ---》spring-boot-starter-logging
+
+
+在springboot中使用@slf4j,那么就可以在这个类中使用log这个实例对象来使用日志
+
+
+可以在配置文件中配置logging.level来指定日志所在的路径和日志的级别
+将logback-spring.xml配置文件放到resources目录下
+logging.level.com.tom.dao=DEBUG，这个配置就可以打印出mybatis的查询日志：包括执行的sql，查询的参数，查询结果
+
+
+
+如果要使用其他的日志，那么就需要排除webstarter中的日志依赖
+ <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+          <exclusions>
+            <exclusion>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-logging</artifactId>
+            </exclusion>
+        </exclusions>
+		</dependency>
+-----------------------------		
+使用springaop 同一处理日志
+
+引入aop的starter
+<dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
+在切面类中同一处理日志
+
+
+Actuator监控管理
+
+自定义starter包（springboot的核心原理）
+
+自定义starter包的过程
+创建一个springboot工程，引入springboot的starter包
+spring-boot-starter
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter</artifactId>
+</dependency>
+
+根据自定义starter的目的，引入对应的jar
+这里定义mybatis的starter
+
+
+定义自定义配置类，使用@Configuration注解
+在类中定义创建的bean
+
+如果需要配置属性，那么就定义属性类，在类上使用@ConfigurationProperties注解，注解的prefix定义配置属性的前缀
+@ConfigurationProperties(
+        prefix = "auto.mybatis"
+)
+在配置类上使用@EnableConfigurationProperties注解，注解中指定属性类的class对象
+@EnableConfigurationProperties({MybatisProperties.class})
+
+在配置上使用@ConditionalOnProperty注解，
+@ConditionalOnProperty//存在对应配置信息时初始化该配置类
+        (
+                prefix = "auto.mybatis",//存在配置前缀
+                value = "enabled",//开启
+                matchIfMissing = true//缺失检查
+        )
+
+
+
+@ConditionalOnMissingBean注解作用在@bean定义上，它的作用就是在容器加载它作用的bean时，
+检查容器中是否存在目标类型（ConditionalOnMissingBean注解的value值）的bean了，如果存在这跳过原始bean的BeanDefinition加载动作。
+
+在resources中创建META-INF目录，在META-INF定义spring.factories文件，在文件中配置
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.tom.config.MybatisAutoConfig
+将定义的配置类的全类名配置在文件中
+
+
+
+自动配置的原理
+@SpringBootApplication注解中包含了注解EnableAutoConfiguration
+在注解EnableAutoConfiguration中，使用了@Import注解，这注解引入了AutoConfigurationImportSelector类
+(@Import注解是将指定的Bean加入到IOC容器之中进行管理)
+
+AutoConfigurationImportSelector类实现了ImportSelector接口，ImportSelector接口是至spring中导入外部配置的核心接口，
+SpringBoot的自动化配置和@EnableXXX(功能性注解)都是通过这个AutoConfigurationImportSelector类来实现的
+
+
+
+实现自动主要就是通过这个类AutoConfigurationImportSelector的体系结构中实现了ImportSelector接口，
+（启动时没有执行接口org.springframework.context.annotation.ImportSelector的selectImports方法）
+
+读取META-INF/spring.factories文件加载配置信息的过程
+在org.springframework.boot.autoconfigure.AutoConfigurationImportSelector#getCandidateConfigurations这个方法中实现
+在这个方法中执行SpringFactoriesLoader的loadFactoryNames方法来完成读取META-INF的spring.factories文件
+读取配置文件的过程
+classLoader.getResources("META-INF/spring.factories") 读取到配置文件将配置文件信息加载到properties实例中
+然后将配置信息读取出来
+
+-----------------------------------------------
+
+spring启动时，执行refresh方法，在执行invokeBeanFactoryPostProcessors方法时实现配置类的加载和解析
+
+通过BeanDefinitionRegistryPostProcessor BeanDefinition注册的后置处理器来注册自动化的BeanDefinition；
+
+首先获取到所有实现ImportSelector接口实例，执行AutoConfigurationImportSelector的内部类AutoConfigurationGroup的process方法，
+调用getAutoConfigurationEntry方法，在这个方法中读取到配置文件，加载配置文件的内容
+
+
+然后通过ConfigurationClassBeanDefinitionReader类 ，解析获取到spring.factories文件的内容，获取到配置类的class对象，
+然后解析配置类中的信息，获取到配置类中的BeanDefinition，注入到容器中，这样之后就可以创建bean
+
+
+
+读取配置文件的过程
+classLoader.getResources("META-INF/spring.factories") 读取到配置文件将配置文件信息加载到properties实例中
+然后将配置信息读取出来将配置类交给spring容器来加载bean
+
+
+
+ConfigurationClassParser-->parser
+
+首先执行process方法，process方法是AutoConfigurationImportSelector的内部类AutoConfigurationGroup的方法；
+在这个方法中解析META-INF/spring.factories文件读取内容，然后创建AutoConfigurationImportSelector.AutoConfigurationEntry实例
+然后将这个实例保存在AutoConfigurationGroup的字段autoConfigurationEntries  （ArrayList）集合中
+
+执行selectImports方法，selectImports方法也是AutoConfigurationImportSelector的内部类AutoConfigurationGroup的方法，
+将结果转换为Iterable集合，解析配置类解析为SimpleMetadataReader对象，
+
+然后将信息解析为BeanDefinition放到容器中
+（org.springframework.boot.autoconfigure.AutoConfigurationImportSelector.AutoConfigurationGroup#selectImports）
+
+
+
+1.@Import用来导入一个或多个类（会被spring容器托管），或者配置类(配置类里面的bean都会被spring容器托管)
+
+ImportSelector 该接口的方法的返回值都会被纳入到spring容器管理中
+
+-------------------------------------------------------------------
+
+
+整合spring mvc
+
+	
+
+
+tomcat启动流程
+springboot内嵌了tomcat
+AnnotationConfigServletWebServerApplicationContext--》ServletWebServerApplicationContext
+在启动springboot时，执行refresh方法，ServletWebServerApplicationContext实现了重写了方法onRefresh
+在这个方法中执行createWebServer方法
+
+1.创建ServletWebServerFactory实例
+2.执行ServletWebServerFactory的getWebServer方法，
+3.在getWebServer方法中创建Tomcat实例，封装了配置的属性
+4.执行getTomcatWebServer方法，在这个方法中创建TomcatWebServer对象，在构造函数中调用tomcat的start方法，这样tomcat就启动了
+
+
+EmbeddedTomcat
+->TomcatServletWebServerFactory
+->TomcatServletWebServerFactory.getWebServer()
+->getTomcatWebServer
+->TomcatWebServer->启动tomcat
+
+--------------
+springboot启动流程
+AnnotationConfigServletWebServerApplicationContext
+
+启动流程就是在org.springframework.boot.SpringApplication#run(java.lang.String...)方法中完成的
+执行的步骤
+1.从类路径下META‐INF/spring.factories，取得SpringApplicationRunListeners；
+2.回调所有的获取SpringApplicationRunListener.starting()方法
+3.准备执行环境信息
+4.大于打印Banner
+5.创建spring容器AnnotationConfigServletWebServerApplicationContext
+6.执行refresh方法启动spring容器
+7.SpringApplicationRunListener回调started方法
+8.获取所有的ApplicationRunner和CommandLineRunner进行调用
+9.所有的SpringApplicationRunListener的running()；
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

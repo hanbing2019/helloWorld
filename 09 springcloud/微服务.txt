@@ -1,0 +1,1629 @@
+什么是微服务
+是架构设计的一种设计风格，它的主旨是将一个独立的系统拆分为多个
+小型服务，每个服务都在各种独立的进程中运行，服务之间通过http的restful api进行
+通信协作，被拆分的每个小型服务都是围绕着系统中的某一项或一些耦合度高的业务进行构建的。
+每个服务都维护着自身的数据存储，业务开发，自动化测试案例和独立部署机制。由于有了轻量级
+的通信协助基础，所有的微服务可以使用不同的语言来编写
+
+与单体系统的区别
+单体项目：所有的业务逻辑都在一个应用中，开发，测试，部署都还比较容易且方便。但是随着企业的发展，
+为了应对不同的业务需求会不断的为该单体项目增加不同的业务模块；同时随着移动端的设备的进步，前端的
+展示模块以不局限于web的形式，这对于系统后端向前端的支持需要 更多的接口模块单体应用由于面对的业务
+需要更为宽泛，不断扩大的需求会使得单体应用变的更加臃肿，它的问题就会凸显出来，由于单体系统部署在一个
+进程内，往往我们修改了一个很小的模块为了部署上线就会影响其他功能的运行
+单体应用中的这些功能模块的使用场景，并发量，消耗的资源都不相同，对于资源的利用是相互影响的，这就是使得对各个
+业务模块的系统容量很难给作出较为准确的评估
+
+所以单体系统在初期虽然可以非常方便的进行开发和使用，但是随着系统的扩展，维护会变得越来越大，且难以控制
+
+微服务将系统不同的功能模块拆分为多个不同的服务，这些服务能够独立部署和扩展，每个服务都运行在自己的进程中，这样每个服务的
+更新都不会影响其他服务的运行；同时也能更准确的为每个服务评估性能容量，通过配合服务间的协作流程也可以更容易的发现系统的瓶颈
+位置，以及给出较为准确的系统级性能容量评估
+
+微服务带来的问题
+1.运维的新挑战，需要维护的进程数量会大大增加
+2.接口一致性，拆分了服务，但是业务逻辑上的依赖不会消除，他只是从单体应用的代码依赖变为了服务之间的通信依赖
+对原接口的修改，那么交互的方也需要协调这样的修改来进行发布，以确保接口的正确调用
+3.分布式的复杂性：微服务之间通过通信来进行协作，就会带来分布式环境问题：比如网络延迟，分布式事务，异步消息等
+
+
+为什么要使用spring cloud
+是一个解决微服务架构实时的综合性解决框架，整合了诸多被广泛实践和证明过的框架作为实施的基础组件
+并且创建了许多非常优秀的边缘组件
+
+spring cloud是一个基于springboot实现的微服务架构开发工具，他为微服务架构中设计的
+配置管理，服务治理，断路器，智能路由，微代理，控制总线，全局锁，决策竞选，分布式会话和集群
+状态管理等操作提供了一种简单的开发方式
+
+spring boot 
+是springcloud的基础，可以自动化配置，快速开发，轻松部署
+减少复杂的配置文件，通过大量的自动化配置等方式来简化spring原有模板化的配置，使得开发者
+可以快速构件应用
+定义start pom来整合各项功能：不需要在pom.xml中维护那些错综复杂的依赖关系，而是通过模块化的
+starter模块定义来引用，使得依赖管理工作变得更为简单
+自身嵌入tomcat，jetty等容器，不用在安装tomcat，将应用打包成war,在部署到tomcat这样复杂的构建与部署动作，只需要将
+springboot打成jar包，通过java -jar 命令直接运行就能启动一个标准化的web应用
+
+父项目：spring-boot-starter-parent，这个父项目中定义了springboot版本的基础依赖和一些默认的配置内容，比如：
+配置文件application.properties的位置
+spring boot配置详解
+
+配置文件
+
+默认配置文件的路径：springboot工程结构中的src/main/resources目录
+默认的配置文件是application.properties,根据引入的不同starter模块，可以在这里定义容器端口号
+数据库连接信息，日志信息等各种配置
+springboot的配置文件除了使用properties文件外，还支持使用yaml文件
+
+yaml文件是一种可读性高的，表达资料序列的格式。以类型大纲的缩进形式来表示
+配置信息利用阶梯化缩进的方式，结构更为清晰易读，配置内容的字符量也得到了显著的减少
+yaml文件通过使用spring。profiles属性来定义多个不同的环境配置
+yaml文件的不足：无法通过@PropertySource注解来加载配置，但是yaml将属性加载到内存中保存是有序的
+当配置文件中的信息需要具备顺序含义时，yaml的配置比properties更有优势
+
+在配置文件中设置各个starter模块预定义的配置属性
+也可以在配置文件中定义一些自定义的属性
+
+比如在application.properties中添加
+book.name=spring
+然后在应用中通过@Value注解来加载这些自定义参数
+
+@Value("${book.name}")
+String name;
+@Value注解支持2中方式来进行配置
+1：PlaceHolder ${}  doller符号+花括号，花括号内为placeholder，
+2：spring的SpEL表达式 #井号+花括号，花括号内为SpEl表达式
+
+参数引用
+
+在配置文件中使用placeholder来引用
+book.name=spring
+book.desc={book.name} ok
+
+使用随机参数
+在配置文件中，通过使用${random}配置来生成int，long，string的数据值
+random.value=${random.int}
+random.value=${random.long}
+
+命令行参数
+springboot应用通过命令java -jar来启动，可以在命令行中指定应用的参数
+比如java -jar xxx.jar --server.port=8888,
+用命令的方式来设置server.port,并在启动的时候设置端口为8888
+
+
+命令行参数配置使得应用启动前都是可变的，
+
+springboot的多环境配置
+在双屏boot中对环境配置文件的命名格式需要满足application-{profile}.properties
+的格式，profile是对环境的标识
+application-dev.properties   开发
+application-test.properties  测试
+application-prod.properties  生产
+
+具体加载那个配置文件，需要在application.properties文件中通过
+spring.profiles.active属性来设置，其值对应配置文件中的{profile}的值
+默认是dev
+
+配置加载顺序（优先级）
+1.在命令行中传入的参数
+2.SPRING_APPLICATION_JSON中的属性，SPRING_APPLICATION_JSON是以json格式配置在系统环境变量中的内容
+3.java:comp/env中的jndi属性
+4.java的属性系统，通过system.getProperties
+5.操作系统的环境变量
+6.通过random.*配置的随机值
+7.位于当前应用jar包之外，针对不同的{profile}环境的配置文件内容，application-{profile}.properties中的内容
+8.位于当前应用jar包之内，针对不同的{profile}环境的配置文件内容，application-{profile}.properties中的内容
+9.位于当前应用jar包之外的application.properties或者yaml文件中的内容
+10.位于当前应用jar包之内的application.properties或者yaml文件中的内容
+11.在@Configuration注解修饰的类中，通过@PropertySource注解定义的属性
+12.应用的默认属性，使用springApplication.setDefaultProperties定义的内容
+
+
+
+监督与管理
+spring-boot-starter-actuator
+为了让运维系统能够获取各个微服务应用的相关指标以及实现一些常规操作控制，用于植入
+各个微服务应用的接口供监控系统采集信息，引入该模块能够自动为springboot构件的应用提供一系列用于监控的端点
+
+spring cloud在实现各个微服务组件的时候，为该模块做了不少扩展，比如，为元素端点
+增加更多的指标和度量信息（为/health端点增加相关的信息），根据不同组件提供更多的有空的
+端点（为api网关组件zuul提供了/routs端点来返回路由信息）
+
+
+starter包
+。。。
+
+原生端点
+actuator模块中以实现的一些原生端点，根据端点的作用，将其分为三大类：
+应用配置类：获取应用程序中加载的应用配置、环境变量，自动化配置报告等与springboot密切相关的配置类信息
+度量指标类：获取程序运行过程中用于监控的度量指标：比如内存信息，线程池信息，http请求统计等
+操作控制类：提供了对饮用的关闭等操作类功能
+
+应用配置类
+/autoconfig:这个端点用来获取应用的自动化配置报告，包括所有自动化配置的候选项，同时还列出
+每个候选项是否满足自动化配置的各个先决条件，改端点可以帮助我们方便地找到一些自动化配置为什么没有
+生效的具体原因
+positiveMatches:返回的是条件匹配成功的自动化配置
+nagativeMatches:返回条件匹配不成功的自动化配置
+/beans：该端点用来获取应用上下文中创建的所有bean，包含了bean的名称，作用域，类型，class文件的具体路径
+依赖bean的名称
+bean
+scope
+type
+resource
+dependencies
+/configprops:该端点用来获取应用中配置的属性信息报告
+
+/env:该端点与/configprops不同，用来获取应用所有可用的环境属性报告，包括环境变量
+jvm属性，应用的配置属性，命令行中的参数
+
+/mappings：返回springmvc的控制器映射关系报告
+/info:该端点用来返回一些应用自定义的信息
+
+度量指标类：报告的内容是动态变化的，提供了应用程序在运行过程中的一些快照信息
+比如内存使用情况，http请求统计，外部资源指标
+/metrics,返回内存信息，线程信息，垃圾回收信息
+/health:应用的各类健康指标信息，自带实现了一些常用资源的监控指标检测器
+/dump：暴露程序运行时的线程信息
+/trace：返回基本的http跟踪信息
+
+操作控制类
+需要通过属性配置来开启操作
+在原生的端点中，只提供了一个用来关闭应用的端点，/shutdown
+可以通过如下配置开启它
+endpoint.shutdown.enabled=true
+在配置了该属性后，只需要通过访问该应用的/shutdown.就可以关闭该应用的远程操作（需要配置安全机制来更加完善）
+
+
+
+
+
+服务治理
+spring cloud eureka是spring cloud Netflix微服务主键的一部分，它是基于Netflix eureka做的二次封装
+主要负者微服务中的服务治理
+
+服务治理
+主要用来实现各个微服务实例的自动化注册和发现
+
+在微服务开始构建的时候，可用的服务不多，可用通过一些静态配置来完成服务的调用
+
+但是当业务的发展，系统功能越来越复杂，微服务无应用在不断增加，静态配置就越来越难以维护
+
+面对不断发展的业务，集群的规模，服务的位置，服务的名称都可能发生改变，如果通过手工来维护
+那么极易发生错误，对静态配置内容的维护也会消耗巨大的人力
+
+
+为解决实例维护问题，产生了大量的服务治理框架和产品，这些产品都是围绕着服务注册和发现机制来完成
+微服务的实例的自动化管理
+
+服务注册：在服务治理框架中，通常会构建一个注册中心，每个服务向注册中心登记自己的注册信息，比如主机，端口号
+版本号，通信协议等一些附加信息告知注册中心，注册中心按服务名称分类组织服务清单；服务注册中心还会以心跳的方式
+去监控清单中的服务是否可用，如果不可用就从服务清单中剔除，达到排除故障的效果
+
+服务发下：在服务治理框架下，服务间的调用不在通过指定的的具体实例地址来实现，而是通过向服务名发起请求调用来实现
+调用方需要向服务注册中心咨询服务，并获取所有的服务实例清单，以实现对具体的服务实例访问
+
+Netflix eureka
+spring cloud eureka，使用Netflix来实现服务的注册和发现，它包含了服务端和客户端，并且都是用java来实现的，所以eureka
+主要是用于通过java实现的分布式系统，
+
+eureka服务端：服务注册中心，支持高可用依托于强一致性的服务实例可用性，可以应对多种不同的故障场景
+eureka客户端：处理服务的注册和发现，eureka客户端向服务注册中心注册自身提供的服务并周期性的发送心跳来更新它的服务租约
+并且从服务端查询当前注册的服务信息，并且把它们缓存到本地并周期性的刷新服务状态
+
+搭建注册中心
+引入依赖
+
+通过@EnableEurekaServer注解开启一个服务注册中心，让其他应用将服务实例注册到这个注册中心
+使用非常简单，就是在普通的springboot启动类上使用这个注解就能开启这个功能
+默认情况下，该服务注册中心会将自己作为客户端来尝试注册自己，所有需要禁用它的服务注册行为
+
+eureka.client.register-with-eureka:应用是否向注册中心注册服务，如果应用本身就是注册中心，那么就不需要注册自己
+设置为false
+eureka.client.fetch-registry:由于注册中心的职责就是维护服务实例，他并不需要去检索服务，所以设置为false
+
+
+服务提供者，注册服务
+引入相关依赖
+
+注解@EnableDiscoveryClient
+在启动类上使用这个注解，激活eureka的DiscoveryClient实现（自动化配置，创建DiscoveryClient接口实现类的实例EurekaDIscoveryClient）
+
+可以注入DiscoveryClient来查看实例信息
+@Autowired
+DiscoveryClient client;
+这个对象中包含了服务实例的ip、端口、serverid等信息；DiscoveryClient中包含了从注册中心获取到的服务的相关信息
+
+配置
+eureka.client.serverUrl.defaultZone:指定服务注册中心的地址
+
+
+高可用注册中心
+在分布式环境中，需要充分考虑发生故障的情况，所以在生产环境中必须对各个组件进行高可用的部署
+构件高可用的注册中心科员让增强系统的可用性
+
+在eureka服务治理中，所有的节点：服务提供方，服务消费方，服务注册中心，都要考虑高可用问题
+
+服务注册中的高可用
+将服务注册中心自己所为服务向其他注册中心注册自己，这样就可以形成一个互相注册的注册中心，以实现服务清单的同步
+，达到高可用
+eureka.client.serverUrl.defaultZone：通过这个配置来指定注册中心
+
+注册中心高可用后，需要调整服务端的eureka.client.serverUrl.defaultZone配置，将所有的注册中心地址都要添加到value中
+
+服务发现和消费
+创建消费服务
+在主类中使用@EnableDiscoveryClient让改应用注册为eureka的客户端，以获得服务发现的能力，使用restTemplate访问服务
+通过@LoadBalanced注解来实现负载均衡
+
+eureka基础框架
+eureka服务治理的基础框架三大核心要素
+服务注册中心：eureka提供的服务端，提供服务注册与发现的功能
+服务提供者：提供服务的应用，可以是springboot的应用，也可以是其他技术平台且遵循eureka通信机制的应用
+服务消费者：消费者应用从注册中心获取服务列表，从而使消费者可以知道从何处调用所需的服务，使用ribbon来消费服务
+也可以使用feign来消费服务
+
+服务治理机制
+服务提供者：
+服务注册：服务提供者在启动的时候会发送rest请求将自己注册到注册中心，同时附带自己的一些原数据信息
+在eureka注册中心，将元数据信息存储在一个双层map结构中，其中第一个就是key的服务名，第二层的key是具体的服务实例名
+在注册服务时，需要确认配置eureka.client.register-with-eureka=true 参数是否正确，该值默认为true，若为false将不会启动注册操作
+
+
+服务同步：（服务注册到一台注册中心后，服务信息同步到其他注册中心）
+多个服务分别注册到不同的注册中心，服务信息分别由对应的注册中心来维护，由于服务注册中心之间因互相注册为服务，当服务提供者发送
+注册请求到一个服务注册中心时，它将会将该请求转发给集群中相连的其他注册中心，从而实现注册中心之间的服务同步；
+通过服务同步，服务提供者的信息就可以通过任意一台注册中心获取
+
+服务续约
+服务注册完成之后，服务提供者会维护一个心跳用来持续告诉注册中心“我还活着”，以防止注册中心的剔除任务将该服务实例从服务列表中排除，
+这个操作就称为服务续约（renew）
+eureka.instance.lease-renewal-interval-in-sessions=30   定义服务续约任务调用间隔时间，默认30秒
+eureka.instance.lease-expiration-duration-in-sessions=30  服务时效时间，默认90秒
+
+服务消费者
+
+获取服务
+启动消费者时，会发送一个rest请求给服务注册中心，来获取注册的服务清单；eureka会维护一份只读的服务清单返回给客户端，
+同时缓存清单会每隔30秒更新一次
+获取服务是消费者的基础，所以必须确保eureka.client.fetch-registry的参数值为true
+
+
+服务调用
+服务消费者获取到服务清单后，通过服务名可以获取具体服务的实例名和该实例的元数据信息；客户端根据自己的需求决定
+具体调用哪个实例，在ribbon中默认采用轮询的方式进行调用，从而实现客户端你的负载均衡
+Region和zone，一个region可以包含多个zone，每个服务客户端需要被注册到一个zone中，所有客户端都会对应一个Region和一个
+zone，在调用服务的时候，首先访问同处一个zone中的服务提供方，若访问不到，就访问其他的zone
+
+
+服务下线
+（客户端主动发送下线请求）
+当客户端实例服务进行正常关闭操作时，它会触发一个下线的rest请求给注册中心，告知注册中心“我要下线”，注册中心接受到
+请求后将该服务设置为下线，并不下线事件传播出去
+
+注册中心
+失效剔除
+当服务不是正常下线时（网络故障，内存溢出），是服务不能正常使用，而注册中心没有收到服务下线的请求
+
+为了将这些无法提供服务的实例清除，注册中心启动时会创建一个定时任务每隔一段时间（默认60秒）剔除超时没有续约的服务（默认90秒）
+
+自我保护
+服务注册到注册中心后，会维护一个心跳线程，定时告诉注册中心我还活着，；注册中心在运行期间
+会统计心跳失败的比例在15分钟之内是否低于85%，如果低于85%，注册中心就会将当前实例保护起来，让这些实例不会过期，尽可能的包含这些信息
+
+但是如果在保护期间内实例若出现问题，客户端很有可能拿到实际不存在的服务实例，就会出现调用失败的情况，所以客户端就必须有容错机制
+比如重试或者断路器等机制
+eureka.server.enable-self-preservation:开启或者关闭保护模式
+开启保护模式后，注册中心可以不用剔除受保护的实例
+
+
+
+
+eureka客户端大部分通信行为都是主动发起者，注册中心主要是处理请求的接收者
+
+springboot应用将服务注册到注册中心，或者从注册中心获取服务列表
+1、使用@EnableDiscoveryClient注解
+2、配置eureka.client.serverUrl.defaultZone参数来指定注册中心的地址
+
+有2个discoveryclient，一个类和一个接口
+接口是springcloud的接口，它定义了发现服务的常用抽象方法，通过该接口可以有效的屏蔽服务治理的实现细节，不修改程序代码
+类是netflix包中的类，真正发现服务的实现就在这个类
+
+类DiscoveryClient的作用
+向注册中心注册实例服务
+向注册中心租约
+服务停止时，取消租约
+查询注册中心的服务实例列表
+
+
+eureka客户端的主要配置
+1.服务注册相关配置，包括服务注册中心的地址，服务获取的间隔时间，可用区域等
+2.服务实例相关配置，包括服务实例的名称，ip地址，端口号，健康检查路径等
+eureka服务端更多的类似于一个现成的产品，大多数情况下不需要修改它的配置信息
+
+
+服务注册类配置
+指定注册中心
+eureka。client.serverUrl.defaultZone;在配置集群时value值要包含多个注册中心的地址，地址之间用逗号隔开
+如果有安全校验，那么就要在地址上配置好对应的username和password
+
+服务实例类配置
+前缀eureka.instance
+元数据，eureka客户端向注册中心发送注册请求时，用来描述自身服务信息的对象，其中包括了一些标准化信息，比如服务名称
+实例名称，实例ip，实例端口等用于治理服务的重要信息；以及一些用于负载均衡策略或其他特殊通途的自定义元数据信息
+在springcloud中所有eureka配置信息都是通过类EurekaInstanceConfigBean,注册的时候还会将信息包装成InstanceInfo对象发送给
+服务端，信息保存在ConcurrentHashMap对象中metadata
+实例名配置
+实例名，就是InstanceInfo中的instanceId参数，它是区分同一服务中不同实例的唯一标识
+默认的实例名配置规则
+spring.cloud.client.hostname:spring.application.name:spring.application.instance_id:server.port
+也可以通过参数eureka.instance.instanceId这个参数来指定实例名称
+
+配置端点
+可以配置homepageURL，statusPageURL，hearthCheckURL，分别表示主页的url，状态页的url，健康检查的url
+例如修改springbootactuator模块的监控端点
+eureka.instance.statusPageUrlPath=/ddd/info
+
+spring cloud ribbon
+一个基于http和tcp的客户端负载均衡工具，它是基于Netflix ribbon实现的，通过spring cloud 的封装，可以将面向服务的rest模板请求
+自动转换为客户端负载均衡的服务调用
+spring cloud ribbon只是一个工具类框架，它几乎存在于spring cloud构建的微服务和基础设施中
+
+负载均衡是对系统的高可用，缓解网络压力和处理扩容能力的重要手段
+通常负载均衡指的是服务端负载均衡，其中分为硬件负载均衡和软件负载均衡
+主要通过在服务器节点上安装专门的负载均衡设备，比如f5
+软件负载均衡则是通过在服务器上安装具有负载均衡功能或模块的软件来完成请求分发的工作，比如nginx
+
+负载均衡设备或者软件都会维护一个可用的服务端清单，通过心跳检测来剔除故障的服务端节点，来保证清单中的服务端节点都可以正常访问
+当客户端发送请求到负载均衡设备的时候，按照某种算法从维护的可用服务端清单中取出一台服务端地址然后转发
+
+这2中负载均衡设备的最大不同在于服务清单所在的位置不同
+客户端负载均衡都维护这自己要访问的服务清单，这些清单都是来自注册中心
+
+spring cloud ribbon实现负载均衡的步骤
+服务提供者只需要将服务实例注册到注册中心
+服务消费者直接通过被@LoadBalanced注解修饰的RestTemplate来实现服务的接口调用
+
+resttemplate详解
+使用ribbon的自动化配置，同时通过@LoadBalanced注解来实现客户端负载均衡
+几种请求类型和参数类型的服务调用
+get请求
+1.getForEntity函数，该方法返回的是responseEntity，这个对象是spring对http请求响应的封装，主要存储http的几个重要的元素
+，比如http请求状态码的枚举对象httpstatus，请求头信息，请求体对象
+getForEntity的三种不同的重载
+getForEntity(String url,Class responseType,Object ...urlVariables)
+url:请求的地址
+responseType：返回类型，请求响应体body的包装类型
+urlVariables：url中绑定的参数
+
+getForEntity(String url,Class responseType,Map urlVariables)
+前2个和上一个一样的，第三个参数类型是Map,不过也是用来绑定url参数的
+url上的占位符名称要和Map中的key一一对应
+
+
+getForEntity(URI uri,Class responseType)
+这个方法使用参数类型URI来代替url和urlVariables这2个参数，
+uri是jdk的，表示一个统一的资源标识符
+
+2.getForObject函数：是getForEntry的进一步封装，它通过httpmessageconvertextractor对http的请求响应体body内容进行对象转换
+实现请求直接返回包装好的对象内容（也就是方法返回的就是请求响应的对象）
+3个重载方法
+getForObject(String url,Class responseType,Object ... urlVariables)
+url:请求的地址
+responseType：返回类型，请求响应体body的包装类型
+urlVariables：url中绑定的参数
+
+getForObject(URI uri,Class responseType)
+前2个和上一个一样的，第三个参数类型是Map,不过也是用来绑定url参数的
+url上的占位符名称要和Map中的key一一对应
+
+getForObject(URI uri,Class responseType)
+这个方法使用参数类型URI来代替url和urlVariables这2个参数，
+uri是jdk的，表示一个统一的资源标识符
+
+post请求
+对于post请求提供3中方法实现调用
+1.postForEntry
+这个方法和getForEntry类似，也有三个重载的方法
+postForEntry(String url,Object request ,Class responseType,Object ... urlVariables)
+postForEntry(String url,Object request ,Class responseType,Map urlVariables);
+postForEntry(URI uri,Object request ,Class responseType);
+
+方法参数和getForEntry相比多了一个request，这个参数可以是一个普通对象，也可以是HTTPEntry对象
+如果是普通对象，而非HTTPEntry对象的时候，restTemplate会将请求转换为一个httpEntry对象来处理，request参数
+会被当做一个完整的body来处理；如果是HTTPEntry，就会被当做一个完整的http请求对象来处理，这个request不仅包含body
+还包含了header
+
+2.postForObject
+直接将响应的body内容封装成对象来使用
+实现了三个重载函数
+postForObject(String url,Object request ,Class responseType,Object ... urlVariables)
+postForObject(String url,Object request ,Class responseType,Map urlVariables);
+postForObject(URI uri,Object request ,Class responseType);
+
+
+3.postForLocation：以post请求提交资源，并返回资源的uri，不需要指定返回参数类型
+3中重载
+
+postForLocation(String url,Object request ,Object ... urlVariables)
+postForLocation(String url,Object request ,Map urlVariables);
+postForLocation(URI uri,Object request);
+
+put请求
+put请求可以通过put方法实现调用，方法返回void，所以不需要定义返回参数类型
+3种不同的重载
+put(String url,Object request ,Object ... urlVariables)
+put(String url,Object request ,Map urlVariables);
+put(URI uri,Object request);
+
+delete请求
+
+RestTemplate对delete请求可以通过delete方法进行调用实现
+delete(String url,Object ... urlVariables)
+delete(String url,Map urlVariables);
+delete(URI uri);
+
+
+@LoadBalanced注解给RestTemplate做标记，已使用负载均衡的客户端（LoadBalanceClient）来配置它
+
+LoadBalanceClient这是spring cloud的接口，内定义了3个方法
+serviceInstance choose（string serviceId）:根据传入的服务名从负载均衡器中挑选一个服务实例
+T execute(String serviceId,LoadBalanceRequest request)：使用从负载均衡器中挑选出来的服务实例来执行请求
+URI reconstructURI(serviceinstance instance,Uri original)：构建host：port形式的uri，在分布式 系统中，使用
+服务名作为host来构建uri来进行请求；在serviceinstance对象中有host和port，uri对象使用逻辑服务名定义为host的uri
+返回的uri通过serviceinstance中的host和port拼接出具体的host:port的请求地址
+
+LoadBalanceAutoConfiguration是客户端负载均衡器的自动化配置类
+Ribbon实现自动化配置的条件
+1.RestTemplate类必须在当前环境中
+2.springcloud工厂中必须有LoadBalanceClient的bean
+这个类中主要完成三件事
+1.创建LoadBalancerInterceptor的bean，对客户端的请求进行拦截，实现客户端负载均衡
+2.创建RestTemplateCustomizer的bean，用于给RestTemlate增加LoadBalancerInterceptor拦截器
+3.维护一个被@LoadBalancer注解修饰的RestTemplate对象列表，并进行初始化，通过调用RestTemplateCustomer的实例来
+给需要客户端负载均衡的RestTemplate增加LoadBalanceInterceptor拦截器
+
+
+LoadBalancerInterceptor实现负载均衡
+
+当一个被@LoadBalance注解修饰的RestTemplate对象向外发送请求时，会被LoadBalanceInterceptor的intercept方法拦截
+使用RestTemplate时采用服务名作为host，所以直接从httprequest的uri对象中通过getHost()就可以拿到服务名称，然后调用
+execute方法根据服务名来选择实例并发起请求
+
+LoadBalanceClient只是一个抽象的负载均衡接口，RibbonLoadBalanceClient就是这个接口的实现类
+RibbonLoadBalanceClient中通过getServer拿到服务实例，在这个方法中使用nexflix ribbon自身的接口ILoadBalancer接口的chooseServer
+方法来获取实例
+在ILoadBalancer接口中定义了一系列客户端负载均衡的抽象操作
+addserver:向负载均衡器中的服务列表添加实例
+chooseServer：通过某种策略，从负载均衡器中挑选一个具体的服务实例
+markServerDown：同来通知和标识负载均衡器中某个服务实例已经停止服务，不然负载均衡器下次获取服务实例清单前都会认为服务实例均是可用
+getReachableServers：获取服务的当前实例列表
+getAllServers：获取所有已知的服务实例列表
+
+
+BaseLoadBalancer类实现了基础的负载均衡
+在配置类RibbonClientConfiguration中，默认采用的负载均衡器ZoneAwareLoadBalancer
+
+
+在RibbonLoadBalanceClient的execute方法中，通过ZoneAwareLoadBalancer的chooseServer方法来获取负载均衡策略分配到服务实例对象上的
+server，将其包装成RibbonServer对象，使用该对象再回调LoadBalancerInterceptor请求拦截器中的LoadBalanceRequest的apply方法
+向具体服务发送请求，从而实现一开始以服务名为host的uri请求到host：post形式的实际访问地址的转换
+
+LoadBalanceRequest的apply方法
+方法参数ServiceInstance接口，是对服务实例的定义，这个接口暴露了服务治理系统中每个服务实例需要提供的一些基本信息
+String getServiceId()
+String getHost()
+int getPort()
+boolean isSecure()
+URI getUri()
+Map<String,String> getMetadata()
+
+RibbonServer对象就是ServiceInstance接口的实现，处理server对象之外，还存储了服务名，是否使用https标识已经Map中存放一些元数据信息
+
+在apply方法中
+创建servicerequestwrapper对象，servicerequestwrapper实现HttpRequestWrapper，重写getURI方法
+，在getURI方法中通过LoadBalancer接口的reconstructURI方法重写构造一个uri进行访问
+。。。。
+
+配置
+
+重试机制
+springcloud实现服务治理机制强调的是cap中的ap(可用性和可靠性)，它与zookeeper强调cp(一致性和可靠性)的服务治理框架最大的区别就是，eureka为了
+实现更高的服务可用性，牺牲了一点一致性，当注册中心的网络发生故障断开时，所有实例服务的续约心跳无法进行，在强调ap的
+服务治理中会把所有的服务实例剔除，eureka会因为超过了85%的实例丢失心跳而出发保护机制，注册中心保留服务节点，以实现服务间
+依然可以进行相互调用的场景，即使部分服务节点故障，也可保证大多数的服务正常消费
+springcloud eureka在可用性和一致性上的取舍，不论是触发保护机制还是服务剔除的延迟，调用到故障服务实例的时候，为了增强对这类情况的
+容错，所以在实现服务调用的时候进入了重试机制
+通过简单的配置就可以实现
+spring.cloud.loadbalancer.retry.enable=true  开启重试机制，默认为false 关闭的
+
+
+spring cloud hystrix
+在微服务架构中，将服务才分为很多个服务单元，各单元之间通过服务注册和订阅的方式相互依赖，每个单元都是独立的进程运行，通过远程
+调用的方式执行，这样就可能因为网络原因或依赖服务自身的问题出现调用故障或延迟，这样就会直接导致调用方的对外服务出现延迟若调用
+方的请求不断增加，最后会导致任务积压，最终导致自身服务瘫痪
+这就产生了断路器等一些列的服务保护机制
+断路器模式
+
+
+在分布式架构中，当某个服务单元发生故障，通过断路器的故障控制，向调用方返回一个错误响应，而不是长时间等待；
+这样就不会使得线程因为长时间占用不释放，避免故障在分布式系统中的蔓延
+spring cloud hystrix实现了断路器，线程隔离等一系列服务保护功能，它也是基于Netflix的开源框架hystrix实现的
+hystrix具备服务降级，服务熔断，线程和信号隔离，请求缓存，请求合并以及服务监控等强大功能
+
+spring cloud hystrix的使用
+引入依赖
+<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-hystrix</artifactId>
+		</dependency>
+在请求方法上使用@HystrixCommand注解来指定回调方法
+@HystrixCommand属性fallbackMethod来指明回调方法
+
+@HystrixCommand注解是一种方式
+
+hystrix工作流程
+1.HystrixCommand和HystrixObservableCommand对象
+首先构建HystrixCommand或HystrixObservableCommand对象，用来表示对依赖服务的操作请求
+同时传递所有需要的参数
+这里使用了命令模式来实现对服务调用操作的封装
+这2个的应用场景
+HystrixCommand：          用在依赖的服务返回单个操作结果的时候
+HystrixObservableCommand：用在依赖的服务返回多个操作结果的时候
+命令模式：将来自客户端的请求封装成一个对象，从而让你可以使用不同的请求对客户端进行参数化
+
+2.执行命令
+
+Hystrix执行是会根据创建的command对象以及具体情况来选择一个执行
+hystrixcommand实现2个执行方式
+execute():同步执行，从依赖的服务返回一个单元的结果对象，或者发送错误时抛出异常
+R value = command.execute()
+queue()：异步执行，直接返回Future对象，包含了服务执行结束时要返回的单一对象
+Future f=command.queue()
+
+HystrixObservableCommand实现的2种执行方式
+observe()：返回Observable对象，它代表了操作多个结果，它是Hot Observable对象
+Observable observable = command.observe()
+toObservable()：返回Observable对象，它代表了操作多个结果，返回Code Observable对象
+Observable observable = command.toObservable()
+
+在hystrix中使用RxJava响应式编程
+Observable对象是RxJava的核心内容之一，可以理解为事件源或者被观察者，与其对应的就是subscriber对象，可以理解为订阅者
+或者观察者
+
+Observable用来向订阅者Subscriber对象发布事件，subscriber对象则在接收到事件后进行处理，这里的事件就是对依赖服务调用
+
+一个Observable可以发出多个事件，直到结束或者发生异常
+Observable对象每发出一个事件，就会调用对应观察者subscribe对象的onNext()方法
+
+每个Observable的执行，最后一定会通过调用subscribe.onCompleted()方法或者subscriber.onError()来结束该事件的操作流程
+
+3.结果是否被缓存
+当命令的请求缓存功能是被启用的，并且该命令缓存命中，那么缓存的结果会立即以Observable对象的形式返回
+
+4.断路器是否打开
+在命令结果没有缓存命中的时候，hystrix在执行命令前需要检查断路器是否打开
+如果打开，那么不执行hystrix命令，而是转接到fallback处理逻辑（直接执行8步）
+如果关闭，执行第5步，检查是否有可用资源来执行命令
+
+
+
+
+
+5.线程池 请求队列 信号量是否占满
+如果和命令相关的线程池和请求队列，或信号量已被占满，那么hystrix也不会执行命令，而是执行fallback处理逻辑（8步）
+6，执行 hystrixObservableCommand.Contruct()或hysrixcommad.run()抛出异常
+hystrixObservableCommand.Contruct()：返回一个observable对象来发射多个结果，或通过onError发送错误通知
+hysrixcommad.run()返回单一结果，或者抛出异常
+如果执行的方法超过了设置的超时阈值，当前处理线程将会抛出一个timeoutexception,如果该命令不在其自身的线程中执行，
+则会通过单独的计时线程抛出，这种情况下，这就会执行fallback处理逻辑。当前命令没有被取消或中断，那么最终会忽略run或者
+construct方法的返回
+如果命令没有抛出异常并返回结果，
+
+7.计算断路器的健康度
+将成功，失败，拒绝，超时等信息报告给断路器，而断路器会维护一组计数器来统计这些数据
+断路器会根据这些数据决定是否将断路器打开，来对某个依赖服务的请求进行熔断或短路，直到恢复期结束，如果恢复期结束后，
+根据统计判断如果还未到达健康指标，就再次熔断、短路
+
+8.fallback处理
+当命令执行失败的时候，hystrix会进入fallback尝试回退处理，也就是服务降级
+服务降级的情况
+断路器打开的时候
+当前命令的线程池，请求队列或者信号量被占满的时候
+hystrixObservableCommand.Contruct()或hysrixcommad.run()抛出异常
+hystrixObservableCommand和hysrixcommad的降级时有些不同
+hysrixcommad通过getFallback来实现服务降级逻辑
+HystrixObservableCommand通过resumeWithFallback实现服务降级逻辑，返回Observable对象来发射一个或多个降级结果
+
+当命令的降级逻辑返回结果之后，hystrix将该结果返回给调用者
+
+
+9.返回成功的响应
+命令执行成功之后，就会将处理结果直接返回回是以Observable的形式返回
+
+断路器原理
+接口HystrixCircuitBreaker
+public interface HystrixCircuitBreaker {
+
+    boolean allowRequest();每个hystrix都是通过这个方法来判断是否被执行
+    boolean isOpen();返回当前断路器是否被打开
+    void markSuccess();用来闭合断路器
+
+    void markNonSuccess();
+    boolean attemptExecution();
+	}
+HystrixCircuitBreaker的静态类
+	
+
+Factory
+维护hystrix和HystrixCircuitBreaker的映射关系
+定义一个ConcurrentHashMap来实现，key类型是String，也就是hystrix的命令
+value就是HystrixCircuitBreaker
+
+NoOpCircuitBreaker：定义一个什么都不在的断路器实现，允许所有请求，并且断路器状态始终闭合
+
+HystrixCircuitBreakerImpl；是接口HystrixCircuitBreaker的实现类，在该类中定义了断路器的4个核心对象
+private final HystrixCommandProperties properties;
+private final HystrixCommandMetrics metrics;
+private final AtomicReference<Status> status = new AtomicReference<Status>(Status.CLOSED);
+private final AtomicLong circuitOpened = new AtomicLong(-1);
+private final AtomicReference<Subscription> activeSubscription = new AtomicReference<Subscription>(null);
+
+HystrixCircuitBreakerImpl对接口HystrixCircuitBreaker的实现
+isOpen():判断断路器的打开、关闭状态
+如果断路器打开标识为true，则直接返回true，表示断路器处于打开状态，否则就从度量指标对象metrics中获取healthcounts
+统计对象做进一步判断
+如果请求总数在预设的阈值范围内就返回false，表示断路器处于未打开状态，该阈值的配置参数为
+circuitBreakerErrorThreasholdPercentage,默认为20
+如果错误百分比在阈值范围内就返回false，表示断路器处于打开状态，该阈值的参数为circuitBreakerErrorThresholdPercentage
+默认值为50
+如果上面条件都不满足，则将断路器设置为打开状态，同时，如果是从关闭状态切换到打开状态的换，就将当前时间记录到上面提到
+的circuitOpenedOrLastTestedTime对象中（最新的版本没有这个对象）
+
+allowRequest():判断请求是否被运行，
+根据配置对象properties中的断路器判断强制打开或关闭属性是否被设置，如果强制打开，就直接返回false，拒绝请求，如果强制关闭
+它会运行所有请求，但是同时也会调用isOpen()来执行断路器的计算逻辑，用来模拟断路器打开、关闭的行为
+
+在默认情况下，断路器并不会进入这两个强制打开或关闭的分支中，而是通过！isOpen()||allowSingleTest()来判断是否允许请求访问
+
+marksuccess()：该函数用来在半开路状态时使用,若hystrix命令调用成功，通过调用它将打开的断路器关闭，并重置度量指标对象
+
+依赖隔离
+舱壁模式：使用这个模式实现线程池的隔离，它会为每个依赖服务创建一个独立的线程池，这样就算某个依赖服务出现延迟过高的情况
+也只是对该依赖的调用产生影响，而不会拖慢其他的依赖服务
+优势
+应用自身得到完全保护，不会受不可控的依赖服务影响，即便给依赖服务分配的线程池填满，也不会影响应用自身的其余部分
+
+可以有效降低接入新服务的风险，如果新服务接入后运行不稳定或存在问题，完全不会影响应用的其他的请求
+
+当依赖的服务从失效恢复正常后，它的线程池会被清理并且能够马上恢复健康的服务，相比之下，容器级别的清理恢复速度要慢得多
+
+当依赖的服务出现配置错误的时候，线程池会快速反映出此问题，同时在不影响应用功能的情况下通过实时的动态属性刷新来处理它
+
+当依赖的服务因实现机制调整等原因造成其性能出现很大变化的时候，线程池的监控指标信息会反映出这样的变化
+
+每个专有现车池都提供了内置的并发实现，可以利用它为同步的依赖服务构建异步访问
+
+-----
+线程池隔离方案
+为每个依赖服务都分配一个线程池会增加系统的负载和开销，但是线程池的开销相对于隔离带来的好处
+是无法比拟的
+
+经过Netflix的测试，在99%的情况下，使用线程池隔离的延迟有9ms,对于大多数需求来说这个消耗是微乎其微
+同时hystrix还设计了另一种方案来解决线程池带来的开销：信号量
+除了线程池之外，还可以使用信号量来控制单个依赖服务的并发度，信号量的开销远比线程池开销小，但是它不能设置超时和实现异步访问
+所以只有在依赖服务是足够可靠的情况下才使用信号量
+
+hystrix的使用详情
+
+创建请求命令
+创建HystrixCommand对应的实现类命令，它用来封装具体的依赖服务调用逻辑，通过继承的方式实现，也就是继承HystrixCommand
+
+继承实现的command可以实现请求的同步执行也可以实现异步执行
+同步执行：HystrixCommand对象执行executor()方法实现同步调用，
+异步执行：执行queue()方法,实现异步执行；异步执行可以通过返回的Future对象调用get方法获取结果
+
+也可以通过@HystrixCommand注解实现Hystrix命令的定义
+
+
+定义服务降级
+fallback是hystrix失败后执行的备用方法，用来实现服务的降级处理
+在hystrixcommand中可以通过重载getFallback方法来实现服务的降级逻辑，hystrix会在run方法执行过程中出现错误，超时，线程池拒绝，断路器
+熔断等情况，执行getFallback（）方法
+在hystrixObservablecommand实现的hystrix命令中，可以重载resumewithfallback方法来实现服务降级逻辑
+
+通过@Hystrixcommand注解实现降级服务，通过fallbackmethod来指定具体的服务降级实现方法
+
+
+异常处理
+异常传播
+在hystrixcommand实现run（）方法中抛出异常时，除了HystrixBadRequestException之外，其他的异常都会被认为是执行失败，就会触发服务降级的处理
+逻辑
+在使用注册配置实现hystrix命令时，它还支持忽略指定异常类型功能，只能通过设置@HystrixCommand注解ignoreExceptions参数来实现
+指定异常后，将指定的异常包装到HystrixBadRequestException中，这样就不会触发fallback逻辑
+
+异常获取
+除了HystrixBadRequestException之外，hystrix命令异常进入服务降级之后，需要根据异常做出针对性的处理，那么就需要获取异常，
+getFallback获取异常：使用getExecutionException()方法获取具体的异常，
+注解@HystrixCommand配置时,只需要在fallback实现方法的参数中增加Throwable对象的定义，这样就可以获取异常
+
+命令名称、分组以及线程池划分
+以继承的方式实现hystrix命令使用类名作为默认的命令名称，也可以在构造函数中通过setter静态类来设置
+demo
+
+public DemoCommand(){
+super(
+Setter.
+withGroupKey(HystrixCommandGroupKey.Factory.asKey("groupName")).
+addCommandKey(HystrixCOmmandKey.Factory.askey("CommandName")););
+}
+通过设置命令组，hystrix会根据组来组织和统计命令的告警、仪表盘等信息
+除了根据组实现统计之外，，hystrix命令默认的线程划分也是根据命令分组来实现的，默认情况下，hystrix会让相同组名的命名使用同一
+线程池，所以需要在创建hystrix命令时为其指定命令组名来实现默认的线程池划分
+
+当使用HystrixCommand注解的时候设置命令名称，分组，以及线程池划分
+使用属性commandKey,groupKey,threadPoolKey，分别用来设置命令名称，分组，线程池划分
+
+请求缓存
+在高并发环境下，Hystrix中提供了请求缓存的功能，我们可以方便的开启和使用缓存来优化系统，以此来达到减轻高并发时的请求消耗
+降低请求响应时间
+
+开启缓存
+实现HystrixCommand或HystrixObservableCommand时，重写getCacheKey()方法开启请求缓存
+
+当不同的外部请求处理逻辑调用同一个依赖服务时，hystrix会根据getCachekey方法返回的值来区分是否重复的请求，如果cacheKey相同，
+那么依赖服务只会在第一个请求到达时被真正调用一次，其他的请求从缓存中获取结果
+开启缓存的好处
+减少重复请求的次数，降低依赖服务的并发度
+在同一用户请求的上下文中，相同依赖服务的返回数据始终保持一致
+请求缓存在run（）和construct（）执行之前生效，所以可以有效的减少不必要的线程开销
+
+清理失效缓存
+使用缓存时，如果是只读操作，那么就不考虑缓存的正确性，如果是写操作，那么需要对数据进行处理，以防止读操作获取到过时的数据
+可以通过HystrixRequestCache.clear()方法来进行缓存的清理；
+
+缓存工作原理
+
+AbstractCommand中，getCacheKey返回null，如果不重写这个方法，让他返回一个非null值，那么缓存功能就不会开启
+同时请求命令的缓存属性也需要设置为true才能开启
+
+从异步执行的核心方法toObservable中，缓存的实现步骤‘
+尝试获取请求缓存
+将请求结果加入缓存：维护一个线程安全的Map来保存请求缓存的响应
+
+
+使用注解实现请求缓存
+提供了3个用于请求缓存的注解
+@CacheResult:用来标记请求命令返回的结果应该被缓存，必须和@HystrixCommand一起使用
+@CacheRemove：让请求命令的缓存失效 ，失效的缓存根据定义的key来决定
+@CacheKey：用来定义缓存的key
+
+
+请求合并
+在微服务架构中，依赖通常通过远程调用来实现，而远程调用中最常见的问题就是通信消耗与连接数占用，在高并发情况下，因为通信数量的增加
+总的通信时间消耗将会变得不那么理想；依赖服务的线程池资源有限，将出现排队等待与响应延迟的情况
+Hystrix提供了HystrixCollaper来实现请求的合并，以减少通信消耗和线程数的占用
+HystrixCollaper是一个抽象类，在泛型中定义了三种不同的类型
+BatchReturnType，合并后批量请求的返回类型
+ResponseType：单个请求返回的类型
+RequestArgumentType：请求参数类型
+
+
+也可以使用注解来实现请求合并器
+@HystrixCollapser
+
+
+配置详解
+HystrixPropertiesStrategy来实现各项配置属性
+配置的优先级
+全局默认配置
+全局配置属性
+实例默认值
+实例配置属性
+
+command属性：用来控制HystrixCommand命令的行为
+execution
+execution.isolation.strategy:设置隔离策略，方式如下
+THREAD:通过线程池隔离的策略，默认的配置方式
+SEMAPHORE:通过信号量隔离的策略
+
+execution.isolation.thread.timeoutInMillisenconds:用来配置HystrixCommand执行的超时时间，单位为毫秒，当HystrixCommand执行时间
+超过了这个值，，Hystrix会将执行命令标记为TIMEOUT并进入服务降级处理逻辑
+
+execution.timeout.enable:执行HystrixCommand。run方法时，是否启用超时时间，默认为true，如果设置为false，那么execution.isolation.thread.timeoutInMillisenconds
+这个配置就会失效
+
+execution.isolation.thread.interruptOnTimeOut:执行HystrixCommand。run超时的时候，是否将其中断
+
+execution.isolation.thread.interruptOnCancel:执行HystrixCommand。run取消的时候，是否将其中断
+
+execution.isolation.semaphore.maxconcurrentRequest:隔离策略为信号量时，设置信号量的大小（并发请求数）
+
+spring-cloud-starter-netflix-hystrix和spring-cloud-starter-hystrix的区别
+
+fallback配置
+
+
+Hystrix仪表盘
+用来实时监控Hystrix的各项指标信息，通过hystrix dashboard反馈的实时信息，可以快速发现系统中的问题，从而及时采取应对措施
+hystrix dashboard提供了三种监控方式
+默认的集群监控
+指标的集群监控
+单体的应用监控
+
+turbine集群监控
+汇聚监控信息，并将聚合后的信息提供给hystrix dashboard来集中展示和监控
+
+spring cloud feign
+基于Netflix feign实现，定义和实现服务依赖的接口，只需要创建一个接口，并用注解来配置它，就可以完成对服务提供方的接口绑定
+简化了使用springcloud ribbon时自行封装服务调用客户端的开发工作;整合了spring cloud ribbon和spring cloud Hystrix，除了具有这2个
+模块的功能之外，还提供了一种声明式的web服务客户端定义方式
+
+在使用spring cloud Ribbon时会利用它对RestTemplate的请求拦截实现服务的接口调用，，RestTemplate实现对http请求的封装处理，形成了
+一套模板化的调用方法，在实际开发中，由于服务对依赖的调用不止一个地方，一个接口可以在多处被调用，所以通常都会针对各个微服务自行
+封装一个客户端类来包装这些依赖服务的调用；spring cloud feign就是在RestTemplate的封装基础上，由它来定义和实现依赖服务接口的定义
+在spring cloud feign的实现下，它只需要创建一个接口并用注解的方式来配置它，即可完成对服务提供方的接口绑定从而简化调用客户端的开发量
+
+spring cloud feign在Netflix feign的基础上扩展了对spring mvc注解的支持
+
+starter jar ：spring-cloud-starter-feign
+1.在启动类上使用注解@EableFeignClients来开启spring cloud feign的支持功能
+2.定义接口，通过@FeignClient注解指定服务名来绑定服务，然后在使用springmvc注解来绑定该服务对应的具体的rest接口
+3.在控制类中来实现对feign客户端的调用，使用@AutoWired直接注入之前定义的实例
+4.在配置文件中指定服务注册中心，并定义自身的服务名
+
+参数绑定
+
+继承特性
+spring cloud feign的继承特性来实现rest接口的复用
+创建service接口，方法上使用springmvc注解（@RequestMapping，@ResponseBody等）
+创建一个feign接口，基础service接口，在feign接口上使用@FeignClient注解
+
+优点
+将服务接口剥离出来，同时配置maven仓库就可以实现接口定义的共享，实现在构建期的接口绑定，从而减少服务客户端的绑定配置
+
+缺点
+接口在构建期就建立了依赖，那么接口的变动就会对项目构建造成影响，如果修改了一个接口，那么就会直接导致客户端工程的构建失败
+
+ribbon配置
+
+全局配置
+直接使用ribbon.<key>=<value>方式来设置ribbon的各项参数
+
+指定服务配置
+使用<client>.ribbon.key=<value>的格式进行设置<client>指代的是ribbon客户端，也就是@FeignClient注解配置的name或value属性的值来
+设置对应的ribbon参数
+
+重试机制
+
+Hystrix配置
+全局配置
+默认配置的前缀hystrix.command.default就可以进行设置
+
+禁止hystrix
+全局配置
+feign.hystrix.enable=false
+不全局关闭hystrix支持，而只是针对某个服务客户端关闭hystrix支持，需要通过使用@scope("prototype")注解为指定的客户端配置
+Feign.Builder实例
+1.构建一个配置类，创建Feign.Builder实例
+
+public Feign.Builder feignbuilder(){
+ return Feign.Builder()
+}
+
+2.在@FeignClient的属性Configuration设置该配置类的class对象
+
+
+指定命令配置
+hystrix.command.<commandKey>
+
+<commandKey>默认情况下会采用feign客户端中的方法名作为标识
+
+
+服务降级配置
+1.实现feign客户端的定义接口，编写具体的实现
+2.在@FeignClient的fallback属性来指定对应的服务降级实现类
+
+请求压缩
+springcloud feign支持对请求与响应的gzip压缩，以减少通信过程中的性能消耗
+
+
+日志配置
+在构建FeignClient注解修饰的服务客户端时，会为每一个客户端都创建一个feign.Logger实例
+------------------------
+API网关服务
+spring cloud eureka实现高可用的服务注册中心以及实现微服务的注册与发现
+spring cloud ribbon或者feign实现服务间的负载均衡的接口调用
+spring cloud hystrix实现线程隔离并加入熔断，避免在微服务中因个别服务出现异常而引起级联蔓延
+
+
+网关优点总结
+作为系统同一的入口，屏蔽了系统内部各个微服务的细节
+可以与服务治理框架结合（eureka），实现自动化的服务实例维护以及负载均衡的路由转发
+可以实现接口权限校验和微服务业务逻辑的解耦
+通过服务网关的过滤器，在各个生命周期中去校验请求的内容，将原本在外服务层做的校验前移，保证微服务的无状态性，同时降低微服务的
+测试难度，让服务本身更集中关注业务逻辑层
+
+
+依赖jar
+spring-cloud-starter-zuul(还需要其他的依赖：hystrix，ribbon，actuator)
+
+创建应用主类，增加@EnableZuulProxy注解，用来开启zuul的api网关服务功能
+
+在配置文件中配置路由转发
+传统配置
+zuul.routes.<routename>.path=<routename>/**
+zuul.routes.<routename>.url=http://xxx.xxx.xxx:port/
+所有符合属性path的value都会转到url对应的访问地址
+path和url的路由名称要相同
+
+面向服务的路由
+spring cloud zuul实现了和spring cloud eureka的无缝整合，可以让path不是映射具体的url，而是让他映射到某个服务
+具体的url就交给eureka的服务发现机制自动维护
+
+例如
+zuul.routes.<routename1>.path=<routename1>/**
+zuul.routes.<routename1>.serviceId=<serviceName1>
+
+zuul.routes.<routename2>.path=<routename2>/**
+zuul.routes.<routename2>.serviceId=<serviceName2>
+
+eureka.client.serviceUrl.defaultZone=htt[://ip:port/eureka
+通过服务名和路由名进行映射，通过指定注册中心的位置，就可以让zuul从注册中心拿到对应服务实例，实现path的映射服务，在从服务中挑选
+实例来进行请求转发的完整路由机制
+
+请求过滤（zuul的另一个核心功能）
+在网关定义过滤器来实现对请求的拦截与过滤，实现的方法非常简单，只需要实现zuulFilter这个抽象类并实现定义的4个抽象函数就可以完成对
+请求的拦截和过滤
+zuulfilter的4个方法
+filterType:过滤器的类型
+filterOrder:过滤器的执行顺序
+shouldFilter:判断过滤器是否需要被执行
+run:过滤器的具体逻辑
+
+定义好过滤器后需要在配置类中配置对应的过滤器bean
+
+
+路由详解
+传统配置：在不依赖服务发现机制的情况下，通过在配置文件中具体指出每个路由表达式与服务实例的映射关系实现api网关对外请求的路由
+单实例配置
+通过zuu.routes.<route>.path与zuul.routes.<route>.url进行配置
+多实例配置
+通过zuu.routes.<route>.path与zuul.routes.<route>.serviceID进行配置
+
+服务路由配置：通过zuul和eureka整合，实现对服务实例的自动化维护，只需要通过zuul.routes.<route>.path zuul.routes.<route>.serviceId参数对
+的方式进行配置即可
+而且还有一种更简洁的方式配置
+zuul.routes.<serviceId>=<path>
+serviceId指定的是路由的具体服务名
+path配置匹配的请求表达式
+比如 zuul.routes.user-service=/user-service/**
+
+服务路由的默认规则
+当使用服务名作为请求的前缀时，可以服务路由配置可以自动化完成
+zuul构建网关引入eureka之后，为eureka中的每个服务都自动创建一个默认的路由规则，这些规则的path会使用serviceId配置的服务名作为请求前缀
+
+zuul.ignored-services参数用来设置一个服务名匹配表达式来定义不自动创建路由的规则；配置之后需要在配置文件中配置对应服务具体的
+路由规则，也就是使用之前的路由规则来匹配
+
+自定义路由映射规则
+在配置类中配置PatternServiceRouteMapper的bean，可以定义通过正则表达式来自定义服务与路由的映射规则的生成关系
+PatternServiceRouteMapper：实现PatternServiceRouteMapper之后，只要符合定义规则的服务名，就会优先使用该实现构建出的路径表达式
+如果没有匹配上就会使用默认的路由映射规则
+
+路径匹配
+在zuul中路由匹配的路径表达式采用ant风格
+通配符
+？ 匹配任意单个字符
+*  匹配任意数量的字符
+** 匹配任意数量的字符，支持多级目录
+
+user-service/?   匹配user-service/之后拼接的一个任意字符路径 user-service/a  user-service/b
+user-service/*   匹配user-service/之后拼接的任意字符路径     user-service/a  user-service/ab user-service/abc,但是无法匹配多级路径
+				 user-service/a/c
+user-service/**  可以匹配user-service/*包含的内容之外，还可以匹配多级目录路径
+
+当一个请求url被多个表达式匹配时，无法保证路由优先的顺序
+当存在多个匹配的路由规则时，匹配结果完全取决于规则的保存顺序
+路由规则是通过linkedhashMap保存的，也就是说路由规则的保存是有序的
+
+忽略表达式
+参数zuul.ignore-patterns,用来设置不希望被api网关进行路由的url表达式
+
+路由前缀
+
+本地跳转
+支持forWord形式的服务端跳转配置，在url中使用forWord来指定需要舔砖的服务器资源路径
+
+cookie和头信息
+spring cloud zuul在请求路由时，会过滤掉http请求头信息中的一些敏感信息，防止他们被传递到下游的外部服务器
+cookie在网关中默认不会传递，这就会导致一个常见问题：使用spring security等安全框架的web应用通过spring cloud zuul
+构建的网关来进行路由，由于cookie无法传递，那么就无法实现登陆和权限鉴定
+解决这个问题的方法
+1.设置全局参数为空来覆盖默认配置
+2.通过指定的路由参数来配置
+
+重定向问题
+登陆成功之后跳转到指定页面，不通过网关的路由地址
+
+hystrix和ribbon支持
+
+过滤器详解
+
+过滤器：过滤器必须包含4个基本特征：过滤类型，执行顺序，执行条件，具体操作
+zuulfilter接口定义了4个抽象方法
+
+filterType():默认定义了4中不同生命周期的过滤器：
+pre：在请求之前调用，可以做一些前置加工，比如请求的校验
+routing：在路由请求时被调用，路由请求转发时，请求会被routing类型的过滤器处理
+post：在routing和error过滤之后被调用   routing执行完成之后，请求就会被post类型的过滤器处理，这里不仅可以获取请求信息
+还可以获取到服务实例的返回信息
+error:处理请求发送错误时被调用
+
+filterOrder()：通过int值来定义过滤器的执行顺序，数值越小优先级越高。
+shouldFilter()：返回Boolean值来判断该过滤器是否要执行
+run()：过滤器的具体逻辑
+
+核心过滤器
+zuul提供的一批默认的过滤器，在api网关服务启动的时候被自动加载和启用
+定义在spring-cloud-Netflix-core
+
+errorFilter处理
+
+
+禁用过滤器
+配置
+zuul.<SImpleClassName>.<filtertype>.disable=true
+
+
+
+动态加载
+动态路由
+路由规则的控制几乎都是在可以配置文件中完成，要实现动态路由，就要和spring cloud config的动态刷新机制连续在一起
+
+
+请求生命周期
+
+
+分布式配置中心
+spring cloud config:用来为分布式系统中的基础设施和微服务应用提供集中化的外部配置支持，分为服务端和客户端
+服务端称为分布式配置中心，它是一个独立的微服务应用，，用来连接配置仓库并为客户端提供获取配置信息，加密、解密信息
+等访问接口
+客户端则是微服务架构中的各个微服务应用或基础设施，通过指定的配置中心来管理应用资源与业务相关的配置内容，并在启动时从配置中心
+获取和加载配置信息
+spring cloud配置中心默认采用git来存储配置信息
+
+依赖：spring-cloud-config-server
+创建启动类，使用@EnableConfigServer
+在配置文件中添加配置服务的基础信息以及git仓库的相关信息
+git配置
+spring.cloud.config.server.git.url:git仓库位置
+spring.cloud.config.server.git.searchPaths:配置仓库路径下的相对搜索位置，可以配置多个
+
+spring.cloud.config.server.git.username git用户名
+spring.cloud.config.server.git.password git用户对应的密码
+
+使用详情
+创建配置仓库，根据环境创建对应的配置文件
+配置信息的url与配置文件的映射关系
+url
+/{application}/{profile}[/{label}]
+/{application}-{profile}.yml
+/{label}/{application}-{profile}.yml
+/{application}-{profile}.properties
+/{label}/{application}-{profile}.properties
+
+{label}对应git上的不同分支，默认是master
+
+配置文件命名
+{application}.properties
+{application}-dev.properties
+{application}-test.properties
+{application}-prod.properties
+
+
+客户端配置映射
+引入spring-boot-starter-web,spring-cloud-starter-config
+创建主类
+创建bootstrap.properties,用来指定配置文件的配置服务的位置
+spring.application.name=配置文件规则中的{application}部分
+spring.cloud.config.profile=配置文件规则中的{profile}部分
+spring.cloud.config.label=配置文件规则中的{label}部分
+spring.cloud.config.url=config服务的url
+这些属性必须配置在bootstrap.properties文件中，这样config-server的信息才能被加载
+
+创建restful接口返回配置中的的from属性，通过@Value("${from}"),绑定配置服务中配置的from属性
+除了通过@Value注解绑定注入之外，可以通过Environment对象来获取配置属性
+@Autowired
+Environment env
+
+
+服务端详解
+基础架构
+主要包含下面几个元素
+远程git
+config server
+本地git仓库
+具体的微服务应用，指定config server的地址，从而实现从外部获取应用需要的配置信息；这些应用在启动的时候会向configserver请求
+获取配置信息来进行加载
+
+客户端应用从配置管理中获取配置信息。流程
+1 应用启动，根据bootstrap.properies中配置的应用名{application}环境{profile}分支{label} 向configserver请求获取配置信息
+2 config server根据自己维护的git仓库信息和客户端传递过来的配置定位信息去查找配置信息
+3.将配置信息克隆下来
+4.config server创建spring的applicationcontext实例，并从git仓库中加载配置文件，最后将这些配置信息读取出来返回客户端应用
+5.客户端应用在获得外部配置文件加载到客户端的applicationcontext实例，该配置内容的优先级高于客户端jar包内部的配置内容，在jar中
+不会重复加载
+
+config server通过git clone将配置信息存于本地，起到了缓存的作用，当git服务端无法访问的时候，依然可以取COnfig server中的
+缓存内容进行使用
+
+git配置仓库
+在configserver的application.properites中设置spring.cloud.config.server.git.url属性，指定git仓库的网络地址和用户信息
+
+spring.cloud.config.server.git.url:git仓库位置
+占位符配置url
+{application}、{profile}、{label}这些占位符除了用于标识符配置文件的规则之外，还可以用于 config server中的git仓库地址的url
+配置，比如可以通过{application}占位符来实现一个应用对应一个Git仓库目录的配置效果
+spring.cloud.config.server.git.url=http://.../{application}
+{application}代表应用名，客户端发起获取配置请求时，config server会根据客户端配置的spring.application.name信息来填充{application}
+占位符以定位配置资源的存储位置，从而实现根据微服务应用的属性动态获取不同位置的配置
+
+{label}，如果Git的分支和标签名包含“/”，那么{label}参数在http的url中应用使用"(_)"来代替，以避免改变uri含义，指向到其他的uri资源
+
+
+使用git作为配置中心来存储各个微服务应用配置文件的时候，通过在uri中使用占位符可以帮助我们来规划和实现通用的仓库配置
+代码库：使用服务名作位git仓库名称
+配置库：使用服务名加上-config后缀作为git仓库名称
+
+配置多个仓库
+通过带有通配符的表达式来匹配，实现跟复杂的配置需求；当有多个匹配规则的时候，可以用逗号分割多个{application}/{label}配置规则
+
+
+子目录存储
+config server可以将配置文件定位代git仓库的子目录
+spring.cloud.config.server.git.searchPaths:配置仓库路径下的相对搜索位置，可以配置多个，可以实现一个，目录对应一个应用
+
+
+访问权限
+1.采用http的方式进行认证，需要配置username和password属性来配置账户
+2，不使用http的认证方式，可以采用ssh的方式，通过生成key并在git仓库中进行配置可以实现访问
+
+spring.cloud.config.server.git.searchPaths:配置仓库路径下的相对搜索位置，可以配置多个
+spring.cloud.config.server.git.username git用户名
+spring.cloud.config.server.git.password git用户对应的密码
+
+svn配置仓库
+除了支持git，也能使用svn仓库，
+引入依赖
+groupId:org.tmatestoft.svkkit
+artifactId:svnkit
+version:1.8.10
+配置文件application.properies中配置
+spring.cloud.config.server.svn.uri
+spring.cloud.config.server.svn.username
+spring.cloud.config.server.svn.password
+
+
+本地仓库
+在使用git或svn仓库之后，文件都会在config server的本地文件系统中存储一份，这个文件默认会被存储在以config-repo为前缀的临时目录中
+比如名为/tmp/config-repo-<随机数>的目录中
+这个目录可以指定，通过配置来实现
+spring.cloud.config.server.git.basedir或spring.cloud.config.server.svn.basedir来指定具体的配置文件位置
+
+本地文件系统
+spring cloud config还提供了一种不使用git仓库或svn仓库的存储方式，而使用本地文件系统的存储方式来保存配置信息
+实现方式
+spring.profiles.active=native,config server会默认从应用的src/main/resource目录下
+spring.cloud.config.server.native.searchLocations属性来指定具体文件位置
+
+监控检测
+
+不使用监控检测可以通过配置来关闭建库检测
+spring.cloud.config.server.health.enabled=false
+
+属性覆盖
+属性覆盖特性，可以让开发人员为所有应用提供属性配置
+spring.cloud.config.server.overrides属性来设置参数，这些参数会以map的方式加载到客户端的配置中，通过该属性配置的参数捕获被客户单修改
+并且所有的客户端都会取到这些信息，可以用来设置一些共同属性
+spring.cloud.config.server.overrides.name=**
+spring.cloud.config.server.overrides.from=**
+
+安全保护
+一般可以使用物理网络限制，oauth2授权
+springcloud以springboot为基础构建的，所以使用spring security会更加方便
+引入spring security的jar
+
+加密解密
+spring cloud config提供了对属性进行加密解密的功能，以保护配置文件的信息安全
+
+spring cloud config高可用配置
+实现方式
+1.传统模式
+不需要服务端做任何的配置，只需要将所有的config server指向同一个git仓库，客户端访问config server时，只需要在config server上层配置负载均衡即可
+
+2.服务模式
+将config server作为一个普通的微服务应用，将其纳入eureka的服务治理中，这种方式比起传统模式更加利于维护；
+对应服务端的负载均衡和客户端配置中心的指定通过服务治理机制一并解决
+
+客户端详解
+
+uri指定配置中心
+当配置了spring.cloud.config.uri的时候，客户端才会尝试连接config server获取配置信息并且初始化spring环境变量，配置参数在
+bootstrap.properties、环境变量或其他优先级高的jar包中，才能正确加载远程配置信息，没有指定这个参数配置时，就会默认区访问localhost:8888
+
+服务化配置中心
+config.server以服务的方式注册到注册中心，并被其他应用发现来获取配置信息
+服务端纳入到eureka的服务治理
+
+1.引入eureka的starter jar
+2.配置文件中指定eureka
+
+客户端配置
+引入eurekajar 
+配置eureka，config server相关参数
+配置都是在bootstrap中进行
+在启动类中使用@EnableDiscoveryClient，用来发现config-server
+
+失败与快速响应
+客户端
+客户端判断config server获取是否正常，并快速响应失败应用，只要在bootstrap.properties
+配置参数spring.cloud.config.fastFail=true即可
+
+spring.cloud.config.fastFail=true:加上这个配置参数后，当configserver 宕机或是客户端配置不正确导致连接不到而启动失败
+，快速响应的配置可以发挥比较好的效果；
+若只是因为网络波动等其他间歇性原因导致的问题，直接启动代价优点高，所以config 客户端还提供了自动重试的功能
+
+1.配置spring.cloud.config.fastFail=true
+2.添加spring-retry和spring-boot-starter-aop依赖
+
+通过重试机制可以避免config server的间歇性问题导致客户端应用无法启动
+
+设置重试次数
+spring.cloud.config.retry.inital-attempts:最大重试次数，默认6次
+
+设置重试间隔时间
+spring.cloud.config.retry.multiplier:初始重试间隔时间，默认为1000毫秒
+spring.cloud.config.retry.inital-interval:下一间隔的乘数，默认为1.1；初始间隔为1000，下次间隔就是1100
+spring.cloud.config.retry.max-interval
+
+获取远程配置
+向config server发送get请求以直接的方式获取，
+不带{label}分支信息，默认使用master
+/{application}-{profile}.yml
+/{application}-{profile}.properties
+
+代{label}分支信息，
+/{label}/{application}-{profile}.yml
+/{application}/{profile}/[/{label}]
+/{label}/{application}-{profile}.properties
+
+通过客户端配置加载的内容
+spring.application.name  :对应配置文件中的{application}
+spring.cloud.config.profile:对应配置文件中的(profile)内容
+spring.cloud.config.lable：对应git的分支，不配置默认为 master
+
+配置动态刷新
+配置修改后实现实时刷新
+
+config server
+1.新增spring-boot-starter-actuator监控模块，包含/refresh端点的实现，这个端点就是用来实现客户端应用配置信息的重写获取实时刷新
+还可以同git仓库的web hook功能进行关联，当有git提交变化时，就给对应的配置主机发送/refresh请求来实现配置信息的实时更新，
+
+
+
+消息总线（spring cloud bus）
+在微服务架构的系统中，通常会使用轻量级的消息代理来构建一个共用的消息主题让系统中所有的微服务实例都连接上来，改主题中产生的消息
+会被所有实例监控和消费，所以称为消息总线
+
+消息代理是一种消息验证，传送、路由的架构模式，在应用程序之间起到通信调度 最小化应用之间的依赖，使得应用程序之间可以高效的解耦通信过程
+消息代理是一个中间件产品，核心是一个消息的路由程序，用来实现接收和分发消息，并根据设定好的消息处理流程来转发到对应的应用
+当系统发展壮大之后，维护这样的刷新清单也将成为一个非常大的负担（解决方案使用spring cloud bus来实现以消息总线的方式进行配置变更的通知，并完成集群
+上的批量配置更新）
+消息代理的应用场景
+将消息路由到一个或者多个目的地
+消息转化为其他表现方式
+执行消息的聚集、消息的分界，并将结果发送到它们的目的地，然后重新组合响应返回消息用户
+调用web服务来检索数据
+响应事件或错误	
+用于发布订阅
+常用的开源中间件
+activemq
+kafka
+rabbitmq
+rocketmq
+
+
+spring cloud config：实现配置信息的实时更新，
+
+spring-cloud-bus-amqp模块
+
+rabbitmq
+spring cloud config + spring cloud bus +rabbitmq 整合来实时更新总线上的属性配置
+
+
+使用spring cloud bus与spring cloud config整合，并以rabbitmq作为消息代理，实现应用配置的动态更新
+
+整合spring cloud bus
+
+
+
+
+整体架构：git仓库，config server以及微服务应用实例，这些微服务应用实例都引入spring cloud bus,都连接到rabbitmq的消息总线
+
+运行流程
+微服务应用实例启动后会向config server 发送请求获取配置信息，config server从git仓库中获取配置信息并返回
+当需要修改某个属性
+1.首先通过git去修改对应的属性值，这是的修改并不会触发应用中的属性更新
+向实例发送请求访问/bus/refresh接口，此时就会将刷新请求发送到消息总线中，并重新从config server中获取配置信息，从而实现动态更新
+从git仓库中	配置的修改到发起/bus/refresh的post请求这一步可以通过git仓库的web hook来自动触发
+
+
+消息驱动的微服务
+为微服务应用构建消息驱动能力的框架，基于spring boot来创建独立的，可用于生产的spring应用程序，通过spring intergration来连接
+消息代理中间件以实现消息自动化驱动
+轻量级消息驱动的微服务框架，可以简化开发人员对消息中间件的使用复杂度，让系统人员可以更多的关注核心业务逻辑的开发，
+目前官方支持 RabbitMQ，Kafka两大主流MQ，RocketMQ 则自己提供了相应支持。
+
+应用
+1.引入相关jar包
+2.创建用于接收消息的rabbitmq消息的消费者
+在类上使用注解@EnableBinding
+定义一个接收方法，在方法上上使用@StreamListener注解
+3.创建启动类
+
+
+@EnableBinding：用来指定一个或多个定义了@Input或@Output注解的接口，以此来实现对消息通道的绑定
+@StreamListener：使用在方法上，将被修饰的方法注册为消息中间件上数据流的事件监听器，注解中的属性值对应了监听的消息通道名，当HystrixCommand执行时间rabbitmq
+的控制页面中发布消息的时候，注解修饰的方法会做出对应的响应动作
+
+spring cloud stream构建的应用与消息中间件之间是通过绑定器binder相关联的，绑定器对应用程序而言起了隔离作用
+它使得不同的消息中间件的实现细节对应用程序来说是透明的，对spring cloud stream的应用程序而言不需要知晓消息中间件的通信细节
+只需知道binder对应程序提供的抽象概念来使用消息中间件来实现业务逻辑即可
+这个抽象概念就是消息通道:channel
+绑定器：通过绑定器作为中间层，完美的实现应用程序与消息中间件的实现细节之间的隔离，通过向应用程序暴露统一的channel通道，使得应用程序之间可以高效的解耦通信过程
+程序不需要在考虑各种不同的消息中间件的实现
+当需要升级消息中间件，或者更换其他的消息中间件时，只需要更换对应的绑定器，不需要修改springboot的应用逻辑
+目前spring cloud stream只支持rabbitmq和kafka
+提供了rabbitmq的默认支持，通过配置就可以使用rabbitmq
+
+发布订阅模式
+spring cloud stream消息通信遵循发布订阅模式，当一条消息被投递为消息中间件之后，它会通过共享的topic主题进行广播，消息消费者在订阅
+的主题中收到消息并触发自身的业务逻辑：spring cloud stream的主题topic是一个抽象的概念，不同的中间件对应的类型不同
+在rabbitmq中，对应exchange
+在kafka中，对应topic
+发布订阅模式可以有效降低生产者和消费者之间的耦合，当需要对同一类消息增加一种处理方式时，只需要增加一个应用程序并将输入通道绑定
+到现有的主题中就可以实现功能扩展，而不需要改变原来以实现的内容
+
+消费组
+发布订阅模式可以实现解耦的功能，但是当希望消息只被消费一次的时候，使用发布订阅模式就会被多个应用实现多次消费
+spring cloud stream提供了消费组的功能来解决这个问题
+
+在同一主题上的应用需要启动多个实例的时候，通过spring.cloud.stream.bindings.input.group属性为应用指定一个组名，那么在这个引用的多个
+实例上在接收到消息的时候，只会有一个成员真正收到消息并进行处理
+
+默认情况下,当没有为应用指定消费组的时候，spring cloud stream会为其分配一个独立的匿名消费者
+当一个主题的所有应用都没有被指定消费者的时候，当消息发布后，所有的应用都会对其进行消费，他们各自都属于一个独立的组
+在创建spring cloud stream 应用的时候，建议最好为其指定一个消费组，以防止对消息的重复处理
+
+
+消费分区
+消费者无法控制消息具体被那个实例消费，对于同一消息，它多次到达之后可能是由不同的实例进行消费
+业务场景：对一些具有相同特征的消息设置每次都被同一消费实例处理
+当生产者将消息数据发送给多个消费者实例时，保证拥有共同特征的消息数据始终是由同一个消费实例接收和处理
+
+
+spring cloud stream的核心注解使用详情
+开启绑定功能：@EnableBinding为应用启动消息驱动的功能
+注解定义中包含了@Configuration，所有用它注解的会成为spring的基本配置类，
+注解还通过@Import加载spring cloud stream运行需要的几个基础类
+1.ChannelBindingServiceConfiguration:改配置会加载消息通道绑定必要的实例，比如：用于处理消息通道绑定的ChannelBindingService实例
+消息类型转换器MessageConvertConfigurer,消息通知工厂BindableChannelFactory
+2.BindingBeansRegistrar：这个类是ImportBeanDefinitionRegistrar接口的实现，主要是在spring加载bean的时候被调用
+3.BinderFactoryConfiguration：Binder工厂的配置，主要用来加载与消息中间件相关的配置信息，它会从应用工程的META-INF/spring.binders中
+加载针对具体消息中间件相关的配置文件
+4.SpelExpressionConverterConfiguration：SpEl表达式转换器配置
+
+绑定消息通道
+在spring cloud stream中，可以在接口中通过@Input和@Output注解来定义消息通道，而用于定义绑定消息通道的接口则可以被@EableBinding
+注解参数来指定，从而在应用启动的时候实现对定义消息通道的绑定
+
+在spring cloud stream中定义接口Sink来绑定消息通道。除了sink接口，还定义了source接口和processor
+sink接口通过@Input注解定义输入通道，输入通道返回SubscribableChannel接口对象，，这个接口继承MessageChannel接口对象，定义了维护
+消息通道订阅者的方法
+Source接口通过@Output定义输出通道，输出通道返回messagechannel接口对象，，该接口定义了向消息通道发送消息的方法
+
+Processor通过继承Source和Sink接口同时定义了输入通道和输出通道
+
+@Input和@Output都有一个value属性，该属性可以用来设置消息通道的名称，如果没有设置名称，那么就使用方法名来作为通道名称
+
+注入接口绑定
+在完成消息通道绑定之后，spring cloud stream会为其创建具体的实例，使用时只需要通过注入的方法来获取对应的实例就可以使用
+
+
+消息的生产和消费
+spring cloud stream是基于spring integration构建起来的，使用spring cloud stream构建消息驱动服务的时候，完全可以使用spring intergration
+的原生注解来实现各种业务需求
+@ServiceActivator：可以用来替换@StreamListener，实现对Sink.INPUT通道的监听处理
+
+@InboundChannelAdapter：修饰的方法对sinkoutput.OUTPUT通道的输出绑定，使用poller参数将该方法设置为轮询
+
+@Transformer注解对指定的消息通道的消息进行转换
+
+@StreamListener详解：spring cloud stream会将其修饰的方法注册为输入的消息通道的监听器，当输入消息通道有消息到达的时候
+，会立刻触发该方法的处理逻辑来对消息进行消费
+消息转换
+@StreamListener内置消息转换功能
+通过消息来对接服务或者系统时，消息生产者都会以结构化的字符串形式来发送，比如json或者xml,
+当消息到达时，输入通道的监听器需要对该字符串进行转换，将json或者xml转换为具体的对象，然后在做后续的处理
+
+消息反馈
+处理完消息后反馈给一个消息给对方，这就需要@SendTo注解来指定返回内容的输出通道
+
+响应式编程
+
+消费组和消费分区的实现
+
+消费组
+通常服务不会以单实例节点的形式运行在生成环境中，，当一个服务启动多个实例时，这些实例会绑定到同一个消息通道的目标主题上
+默认情况下，当生产者发出一个消息绑定到通道上，这条消息会产生多个副本被每个消费者实例接收和处理；
+但是在有些业务场景下，希望消息只被一个实例消费，这就需要为消费者设置消费组来实现这个功能，实现方式很简单，只需要在服务消费端
+设置spring.cloud.stream.bindings.input.group属性即可，
+spring.cloud.stream.bindings.input.destination：指定输入通道对应的主题名
+消费者配置
+spring.cloud.stream.bindings.input.group=服务名
+spring.cloud.stream.bindings.input.destination=主题名
+生产者配置
+spring.cloud.stream.bindings.input.destination=主题名
+
+每个生产者发出的消息会被启动的消费者以轮询的方式进行接收和输出
+
+消费分区
+消费者的设置保证同一消息只被一个消费者实例接收和处理，但是对于写特殊的场景，除了要保证单一实例消费之外，还希望那些具备相同特征
+的消息能够被同一实例进行消费。这时候就需要对消息进行分区处理
+实现方式：
+消费组配置
+
+spring.cloud.stream.bindings.input.group
+spring.cloud.stream.bindings.input.destination
+spring.cloud.stream.bindings.input.consumer.partitioned=true:开启消费分区功能
+spring.cloud.stream.instanceCount：指定当前消费者的总实例数量
+spring.cloud.stream.instanceIndex：设置当前实例的索引号(实例索引号不同)
+
+生产者配置
+spring.cloud.stream.bindings.input.destination
+spring.cloud.stream.bindings.input.producer.partitionKeyExpression:指定参数指定了分区键的表达式规则，根据实例的输出消息
+规则配置SpEl来生成合适的分区键
+spring.cloud.stream.bindings.input.producer.patitionCount：消息分区的数量
+
+spring.cloud.stream.bindings.input.destination=greetings
+spring.cloud.stream.bindings.input.producer.partitionKeyExpression=payload
+spring.cloud.stream.bindings.input.producer.patitionCount=2
+
+消费类型
+spring cloud stream为了让开发者在消息中声明它的内容类型，在输出消息中定义了一个默认的头信息：contentType。对于那些不直接支持
+头信息的消息中间件，spring cloud stream提供了自己的实现机制，在消息发出前自动将消息包装进它自定义的消息封装格式，并加入消息
+对于支持那些自身就支持头信息的消息中间件，spring cloud stream的服务可以接收并处理来自非spring cloud stream构建但包含符合规范头
+信息的应用程序发出的消息
+
+spring.cloud.stream.bindings.<channelName>.content-type:声明式的配置方式为绑定的输入和输出通道设置消息内容类型
+
+spring cloud stream自带的消息类型转换
+json和pojo的互相转换
+json和org.springframework.tuple.Tuple的互相转换
+Object和byte[]的互相转换
+string和byte[]的互相转换
+Object向纯文本转换
+MIME类型
+spring cloud stream中定义的content-type属性采用Media Type，也就是MIME类型，常见的有application/json,text/plain
+
+绑定器详解
+绑定器：定义在应用程序和消息中间件的抽象层，用来屏蔽消息中间件对应用的复杂性，并提供简单和统一的操作接口给应用程序使用
+绑定器spi:涵盖了一套可插拔的用于连接外部中间件的实现机制，其中包含许多接口，开箱即可用的实现类以及发发现策略等内容，其中最关键
+的就是binder接口，用来将输入和输出连接到外部中间件的抽象
+当应用程序对输入和输出通道进行绑定的时候，就是通过这些binder接口来实现完成的
+接口方法bindProducer：向消息通道发送数据的生产者调用的方法，绑定输出通道时
+
+第一个参数：代表发送消息中间的目标名称
+第二个参数：代表发送消息的本地通道实例
+第三个参数：用来创建通道时使用的属性配置
+接口方法bindConsumer：从消息通道接收数据的消费者调用的方法，绑定输入通道时
+第一个参数：代表接收消息中间的目标名称
+第二个参数：消费组的名称
+第三个参数：代表接收消息的本地通道实
+第四个参数：用来创建通道时使用的属性配置
+
+Binder绑定器的内容
+实现Binder接口的类
+spring配置加载类，用来创建连接消息中间件的基础结构使用的实例
+在classpath下的META-INF/spring.binders路径找到	绑定器定义文件
+
+自动化配置
+spring cloud stream通过绑定器spi的实现将应用程序逻辑上的输入输出通道连接到物理上的消息中间件
+消息中间件之间通常都会有或多或少的差异，所以为了适配不同的消息中间件，需要为他们实现各自独有的绑定器。目前spring cloud stream中定义接口Sink来绑定消息通道。除了sink接口，还定义了source接口和processor默认
+实现了对rabbitmq和kafka的绑定器
+
+默认情况下，spring cloud stream也遵循spring boot自动化配置的特性，如果在classpath中能够找到单个绑定器的实现，那么spring cloud stream
+就会自动加载它，在classpath中引入绑定器的方法，只需要在pom.xml中增加对应消息中间件的绑定器依赖
+比如rabbitmq
+<dependency>
+<groupId>org.springframework.cloud</groupId>
+<artifactId>spring-cloud-stream-binder-rabbit</artifactId>
+</dependency>
+kafka
+<dependency>
+<groupId>org.springframework.cloud</groupId>
+<artifactId>spring-cloud-stream-binder-kafka</artifactId>
+</dependency>
+
+多绑定器配置
+当应用程序的classpath下存在多个绑定器时，spring cloud stream在为消息通道做绑定操作时，无法判断应该使用哪个具体的绑定器，所以需要在
+为每个输入或输出指定绑定器
+配置默认绑定器
+比如绑定rabbit
+spring.cloud.stream.defaultBinder=rabbit
+配置其他的绑定器
+spring.cloud.stream.bindings.input.binder=kafka
+配置绑定器的值并不是消息中间件名称，认识META-INF/spring.binder中定义的标识，也就是绑定器的key值
+
+配置通常分为通用配置，消费者配置，生产者配置
+
+分布式服务跟踪
+通过微服务架构系统来实现业务需求，随着系统规模越来越大，各个微服务间的调用关系也变得越来越复杂，在复杂的微服务架构系统中，几乎每个
+前端请求都会形成一条复杂的分布式服务调用链路，每条链路中任何一个依赖服务出现延迟过高或错误的时候有可能引起请求最后失败；这个时候对于每个
+请求，全链路调用的跟踪就变得越来越重要，通过实现对请求调用的跟踪可以帮助我们快速发现错误根源以及监控分析每条请求链路上的性能瓶颈
+
+spring cloud sleuth为微服务架构增加分布式服务跟踪的能力
+
+在应用服务中添加依赖
+<dependency>
+<groupId>org.springframework.cloud</groupId>
+<artifactId>spring-cloud-starter-sleuth</artifactId>
+</dependency>
+添加了spring-cloud-starter-sleuth依赖就可以实现链路跟踪
+跟踪原理
+1.TraceId:为实现请求跟踪，当请求发送到分布式系统的入口端点时，只需要服务跟踪框架为该请求创建一个唯一的跟踪标识，同时在分布式系统内部
+流转，框架始终保持传递该唯一标识，直到返回给请求方为止，这个唯一标识就是TraceId,通过traceid的记录将所有请求过程的日志关联起来
+
+2.SpanId：为统计各个处理单元的时间延迟，当请求到达各个服务组件时，或是处理逻辑到达某个状态时，也通过一个唯一标识来标记它的开始、
+具体过程和结束，这个标记就是span id,对每个span来说必须有开始和结束两个点，通过开始和结束的时间戳统计出延迟时间，除了时间之外，还包含了header
+了一些其他的元数据，比如事件名称，请求信息
+
+添加了spring-cloud-starter-sleuth依赖后，就会为当前应用构建起通信通道的跟踪机制
+比如：
+通过rabbitmq，kafka传递的请求
+通过zuul代理传递的请求
+通过resttemplate发起的请求
+
+当请求发送到应用之前，sleuth会在改该请求的header中增加实现跟踪的重要信息：
+X-B3-TraceId：请求链路的跟踪标识，必须的
+X-B3-SpanId：工作单元的唯一标识，必须的
+X-B3-ParentSpanId：标识当前工作单元所属的上一个单元
+X-B3-SmapleId:是否被抽样输出的标志 ，1表示需要被输出，2表示不需要被输出
+X-Span-Name:工作单元名称
+
+
+抽样收集
+通过traceid和spanid实现对分布式系统的请求跟踪，而记录的跟踪信息最终会被分析系统收集起来，并用来实现对分布式系统的监控和分析
+但是收集的信息越多就会产生大量的跟踪日志信息，会对性能造成影响，同时保存大量的日志信息，也会消耗很多的存储空间。所以sleuth采用了
+抽样的方式来为跟踪信息打上收集标记，也就是在请求头中配置X-B3-SmapleId来决定是否被后续的跟踪信息收集器获取和存储
+
+sleuth中的抽样收集策略是通过sampler接口来实现的
+public interface Sampler{
+boolean isSampled(Span span);
+}
+通过isSmapled方法，spring cloud sleuth会在产生跟踪信息的时候调用它来为跟踪信息生成是否要被收集的标记；
+返回false只是表示跟踪信息不被输出到后续对接的分析系统，对请求的跟踪活动依然会进行，所以在日志中还是能看到收集标记为false的记录
+
+默认情况下 sleuth会使用PercentageBasedSampler实现的抽样策略，以请求百分比的方式配置和收集跟踪信息，可以子啊配置文件中配置参数对应的
+百分比，默认为0.1，代表收集10%的跟踪信息
+spring.sleuth.sampler.percentage
+
+
+
+用户性的配置bootstrap
+系统级的配置放到application中
+
+
+
+
